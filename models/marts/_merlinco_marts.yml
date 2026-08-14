@@ -1,0 +1,494 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: Customer dimension at one row per customer.
+    semantic_model:
+      enabled: true
+    agg_time_dimension: signed_up_at
+    columns:
+      - name: customer_id
+        description: Primary customer identifier.
+        entity:
+          type: primary
+          name: customer
+        data_tests:
+          - not_null
+          - unique
+      - name: signed_up_at
+        description: Customer signup timestamp.
+        granularity: day
+        dimension:
+          type: time
+      - name: signed_up_date
+        description: Customer signup date.
+        granularity: day
+        dimension:
+          type: time
+      - name: home_region
+        description: Canonical customer home region.
+        dimension:
+          type: categorical
+      - name: favored_discipline
+        description: Customer favored magical discipline.
+        dimension:
+          type: categorical
+  - name: dim_potions
+    description: Potion dimension at one row per potion SKU.
+    semantic_model:
+      enabled: true
+    columns:
+      - name: potion_sku
+        description: Primary potion SKU.
+        entity:
+          type: primary
+          name: potion
+        data_tests:
+          - not_null
+          - unique
+      - name: category
+        description: Potion category.
+        dimension:
+          type: categorical
+      - name: is_regulated
+        description: Regulated potion flag.
+        dimension:
+          type: categorical
+      - name: uses_hazardous_ingredient
+        description: Whether the recipe uses a hazardous ingredient.
+        dimension:
+          type: categorical
+  - name: dim_shops
+    description: Shop dimension at one row per shop.
+    semantic_model:
+      enabled: true
+    agg_time_dimension: opened_at
+    columns:
+      - name: shop_id
+        description: Primary shop identifier.
+        entity:
+          type: primary
+          name: shop
+        data_tests:
+          - not_null
+          - unique
+      - name: opened_at
+        description: Shop opening date.
+        granularity: day
+        dimension:
+          type: time
+      - name: city
+        description: Shop city.
+        dimension:
+          type: categorical
+      - name: region
+        description: Canonical shop region.
+        dimension:
+          type: categorical
+  - name: dim_suppliers
+    description: Supplier dimension at one row per supplier.
+    semantic_model:
+      enabled: true
+    agg_time_dimension: contracted_since
+    columns:
+      - name: supplier_id
+        description: Primary supplier identifier.
+        entity:
+          type: primary
+          name: supplier
+        data_tests:
+          - not_null
+          - unique
+      - name: contracted_since
+        description: Supplier contract start date.
+        granularity: day
+        dimension:
+          type: time
+      - name: region
+        description: Supplier region.
+        dimension:
+          type: categorical
+  - name: dim_ingredients
+    description: Ingredient dimension at one row per ingredient.
+    semantic_model:
+      enabled: true
+    columns:
+      - name: ingredient_id
+        description: Primary ingredient identifier.
+        entity:
+          type: primary
+          name: ingredient
+        data_tests:
+          - not_null
+          - unique
+      - name: supplier_id
+        description: Supplier identifier.
+        entity:
+          type: foreign
+          name: supplier
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_suppliers')
+                field: supplier_id
+      - name: unit
+        description: Ingredient unit.
+        dimension:
+          type: categorical
+      - name: is_hazardous
+        description: Hazardous ingredient flag.
+        dimension:
+          type: categorical
+      - name: harvest_season
+        description: Ingredient harvest season.
+        dimension:
+          type: categorical
+  - name: dim_guilds
+    description: Guild dimension at one row per guild.
+    semantic_model:
+      enabled: true
+    columns:
+      - name: guild_id
+        description: Primary guild identifier.
+        entity:
+          type: primary
+          name: guild
+        data_tests:
+          - not_null
+          - unique
+      - name: guild_name
+        description: Guild name.
+        dimension:
+          type: categorical
+  - name: fct_orders
+    description: Order fact at one row per order with item revenue and payment summaries.
+    semantic_model:
+      enabled: true
+    agg_time_dimension: ordered_at
+    metrics:
+      - name: orders
+        type: simple
+        label: Orders
+        agg: count_distinct
+        expr: order_id
+      - name: completed_orders
+        type: simple
+        label: Completed Orders
+        agg: sum
+        expr: case when order_status = 'completed' then 1 else 0 end
+      - name: gross_revenue
+        type: simple
+        label: Gross Revenue
+        agg: sum
+        expr: gross_revenue_gold
+      - name: net_revenue
+        type: simple
+        label: Net Revenue
+        agg: sum
+        expr: net_revenue_gold
+      - name: discounts
+        type: simple
+        label: Discounts
+        agg: sum
+        expr: discount_gold
+      - name: average_order_value
+        type: simple
+        label: Average Order Value
+        agg: average
+        expr: net_revenue_gold
+    columns:
+      - name: order_id
+        description: Primary order identifier.
+        entity:
+          type: primary
+          name: order
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Customer identifier.
+        entity:
+          type: foreign
+          name: customer
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+      - name: shop_id
+        description: Shop identifier.
+        entity:
+          type: foreign
+          name: shop
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_shops')
+                field: shop_id
+      - name: ordered_at
+        description: Order timestamp.
+        granularity: day
+        dimension:
+          type: time
+      - name: order_status
+        description: Order status.
+        dimension:
+          type: categorical
+      - name: order_channel
+        description: Order channel.
+        dimension:
+          type: categorical
+  - name: fct_order_items
+    description: Order item fact at one row per order line with allocated order discounts.
+    semantic_model:
+      enabled: true
+    agg_time_dimension: ordered_at
+    metrics:
+      - name: units_sold
+        type: simple
+        label: Units Sold
+        agg: sum
+        expr: quantity
+      - name: line_revenue
+        type: simple
+        label: Line Revenue
+        agg: sum
+        expr: line_net_gold
+    columns:
+      - name: order_item_id
+        description: Primary order item identifier.
+        entity:
+          type: primary
+          name: order_item
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Order identifier.
+        entity:
+          type: foreign
+          name: order
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('fct_orders')
+                field: order_id
+      - name: customer_id
+        description: Customer identifier.
+        entity:
+          type: foreign
+          name: customer
+      - name: shop_id
+        description: Shop identifier.
+        entity:
+          type: foreign
+          name: shop
+      - name: potion_sku
+        description: Potion SKU.
+        entity:
+          type: foreign
+          name: potion
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_potions')
+                field: potion_sku
+      - name: ordered_at
+        description: Order timestamp.
+        granularity: day
+        dimension:
+          type: time
+      - name: order_status
+        description: Order status.
+        dimension:
+          type: categorical
+      - name: order_channel
+        description: Order channel.
+        dimension:
+          type: categorical
+      - name: potion_category
+        description: Potion category.
+        dimension:
+          type: categorical
+  - name: fct_payments
+    description: Payment fact at one row per payment attempt.
+    semantic_model:
+      enabled: true
+    agg_time_dimension: paid_at
+    metrics:
+      - name: successful_payment_amount
+        type: simple
+        label: Successful Payment Amount
+        agg: sum
+        expr: case when payment_status = 'success' then amount_gold else 0 end
+      - name: failed_payment_count
+        type: simple
+        label: Failed Payment Count
+        agg: sum
+        expr: case when payment_status = 'failed' then 1 else 0 end
+      - name: refunded_payment_count
+        type: simple
+        label: Refunded Payment Count
+        agg: sum
+        expr: case when payment_status = 'refunded' then 1 else 0 end
+    columns:
+      - name: payment_id
+        description: Primary payment identifier.
+        entity:
+          type: primary
+          name: payment
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Order identifier.
+        entity:
+          type: foreign
+          name: order
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('fct_orders')
+                field: order_id
+      - name: paid_at
+        description: Payment timestamp.
+        granularity: day
+        dimension:
+          type: time
+      - name: payment_status
+        description: Payment status.
+        dimension:
+          type: categorical
+      - name: payment_method
+        description: Payment method.
+        dimension:
+          type: categorical
+  - name: fct_brew_events
+    description: Brew event fact at one row per production batch.
+    semantic_model:
+      enabled: true
+    agg_time_dimension: brewed_at
+    metrics:
+      - name: brew_batches
+        type: simple
+        label: Brew Batches
+        agg: count_distinct
+        expr: brew_id
+      - name: brewed_units
+        type: simple
+        label: Brewed Units
+        agg: sum
+        expr: sellable_units_brewed
+      - name: average_brew_duration
+        type: simple
+        label: Average Brew Duration
+        agg: average
+        expr: brew_duration_minutes
+      - name: quality_pass_count
+        type: simple
+        label: Quality Pass Count
+        agg: sum
+        expr: case when quality_check = 'pass' then 1 else 0 end
+      - name: quality_fail_count
+        type: simple
+        label: Quality Fail Count
+        agg: sum
+        expr: case when quality_check = 'fail' then 1 else 0 end
+    columns:
+      - name: brew_id
+        description: Primary brew event identifier.
+        entity:
+          type: primary
+          name: brew
+        data_tests:
+          - not_null
+          - unique
+      - name: potion_sku
+        description: Potion SKU.
+        entity:
+          type: foreign
+          name: potion
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_potions')
+                field: potion_sku
+      - name: shop_id
+        description: Shop identifier.
+        entity:
+          type: foreign
+          name: shop
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_shops')
+                field: shop_id
+      - name: brewed_at
+        description: Brew timestamp.
+        granularity: day
+        dimension:
+          type: time
+      - name: quality_check
+        description: Quality check result.
+        dimension:
+          type: categorical
+      - name: potion_category
+        description: Potion category.
+        dimension:
+          type: categorical
+      - name: brewer_name
+        description: Brewer name.
+        dimension:
+          type: categorical
+  - name: fct_customer_guild_memberships
+    description: Customer guild membership fact at one row per membership interval.
+    semantic_model:
+      enabled: true
+    agg_time_dimension: valid_from
+    columns:
+      - name: membership_id
+        description: Primary membership identifier.
+        entity:
+          type: primary
+          name: membership
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Customer identifier.
+        entity:
+          type: foreign
+          name: customer
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+      - name: guild_id
+        description: Guild identifier.
+        entity:
+          type: foreign
+          name: guild
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_guilds')
+                field: guild_id
+      - name: valid_from
+        description: Membership validity start date.
+        granularity: day
+        dimension:
+          type: time
+      - name: valid_to
+        description: Membership validity end date.
+        granularity: day
+        dimension:
+          type: time
+      - name: membership_tier
+        description: Membership tier.
+        dimension:
+          type: categorical
+      - name: is_current_membership
+        description: Active membership flag.
+        dimension:
+          type: categorical

@@ -1,0 +1,237 @@
+version: 2
+
+sources:
+  - name: merlinco_apothecaries
+    description: Raw Merlin & Co. Apothecaries operational tables.
+    database: RAW_WIZARD
+    schema: MERLINCO_APOTHECARIES
+    tables:
+      - name: RAW_CUSTOMERS
+        identifier: RAW_CUSTOMERS
+        description: Raw customer records.
+        columns:
+          - name: CUSTOMER_ID
+            description: Primary customer identifier.
+            data_tests:
+              - not_null
+              - unique
+          - name: FULL_NAME
+            description: Customer display name.
+          - name: EMAIL
+            description: Customer email address.
+          - name: HOME_REGION
+            description: Raw customer home region code or name.
+          - name: SIGNED_UP_AT
+            description: Customer signup timestamp as text.
+          - name: BIRTH_YEAR
+            description: Customer birth year as text.
+          - name: FAVORED_DISCIPLINE
+            description: Customer favored magical discipline.
+      - name: RAW_SHOPS
+        identifier: RAW_SHOPS
+        description: Raw shop locations.
+        columns:
+          - name: SHOP_ID
+            description: Primary shop identifier.
+            data_tests:
+              - not_null
+              - unique
+          - name: SHOP_NAME
+            description: Shop name.
+          - name: CITY
+            description: Shop city.
+          - name: REGION
+            description: Shop region.
+          - name: OPENED_AT
+            description: Shop opening date as text.
+      - name: RAW_SUPPLIERS
+        identifier: RAW_SUPPLIERS
+        description: Raw supplier records.
+        columns:
+          - name: SUPPLIER_ID
+            description: Primary supplier identifier.
+            data_tests:
+              - not_null
+              - unique
+          - name: SUPPLIER_NAME
+            description: Supplier name.
+          - name: REGION
+            description: Supplier region.
+          - name: RELIABILITY_RATING
+            description: Supplier reliability rating as text.
+          - name: CONTRACTED_SINCE
+            description: Contract start date as text.
+      - name: RAW_INGREDIENTS
+        identifier: RAW_INGREDIENTS
+        description: Raw ingredient catalog.
+        columns:
+          - name: INGREDIENT_ID
+            description: Primary ingredient identifier.
+            data_tests:
+              - not_null
+              - unique
+          - name: INGREDIENT_NAME
+            description: Ingredient name.
+          - name: SUPPLIER_ID
+            description: Supplier identifier.
+          - name: UNIT
+            description: Raw ingredient unit.
+          - name: UNIT_COST_COPPER
+            description: Unit cost in copper coins as text.
+          - name: IS_HAZARDOUS
+            description: Messy boolean hazardous flag.
+          - name: HARVEST_SEASON
+            description: Harvest season.
+      - name: RAW_POTIONS
+        identifier: RAW_POTIONS
+        description: Raw potion catalog.
+        columns:
+          - name: POTION_SKU
+            description: Primary potion SKU.
+            data_tests:
+              - not_null
+              - unique
+          - name: POTION_NAME
+            description: Potion name.
+          - name: CATEGORY
+            description: Raw potion category.
+          - name: BASE_PRICE_COPPER
+            description: Base price in copper coins as text.
+          - name: POTENCY
+            description: Potion potency as text.
+          - name: SHELF_LIFE_DAYS
+            description: Shelf life in days as text.
+          - name: IS_REGULATED
+            description: Messy boolean regulated flag.
+          - name: INTRODUCED_AT
+            description: Introduction date as text.
+      - name: RAW_POTION_INGREDIENTS
+        identifier: RAW_POTION_INGREDIENTS
+        description: Raw potion recipe bridge.
+        columns:
+          - name: POTION_SKU
+            description: Potion SKU.
+            data_tests:
+              - not_null
+          - name: INGREDIENT_ID
+            description: Ingredient identifier.
+            data_tests:
+              - not_null
+          - name: QUANTITY
+            description: Ingredient quantity as text.
+          - name: UNIT
+            description: Recipe unit.
+      - name: RAW_ORDERS
+        identifier: RAW_ORDERS
+        description: Raw order headers.
+        columns:
+          - name: ORDER_ID
+            description: Primary order identifier.
+            data_tests:
+              - not_null
+              - unique
+          - name: CUSTOMER_ID
+            description: Customer identifier.
+          - name: SHOP_ID
+            description: Shop identifier.
+          - name: ORDERED_AT
+            description: Order timestamp as text.
+          - name: STATUS
+            description: Raw order status.
+          - name: CHANNEL
+            description: Order channel.
+          - name: DISCOUNT_COPPER
+            description: Order discount in copper coins as text.
+      - name: RAW_ORDER_ITEMS
+        identifier: RAW_ORDER_ITEMS
+        description: Raw order line items.
+        columns:
+          - name: ORDER_ITEM_ID
+            description: Primary order item identifier.
+            data_tests:
+              - not_null
+              - unique
+          - name: ORDER_ID
+            description: Order identifier.
+          - name: POTION_SKU
+            description: Potion SKU.
+          - name: QUANTITY
+            description: Ordered quantity as text.
+          - name: UNIT_PRICE_COPPER
+            description: Unit price in copper coins as text.
+      - name: RAW_PAYMENTS
+        identifier: RAW_PAYMENTS
+        description: Raw payment attempts.
+        columns:
+          - name: PAYMENT_ID
+            description: Primary payment identifier.
+            data_tests:
+              - not_null
+              - unique
+          - name: ORDER_ID
+            description: Order identifier.
+          - name: METHOD
+            description: Payment method.
+          - name: AMOUNT_COPPER
+            description: Payment amount in copper coins as text.
+          - name: STATUS
+            description: Payment status.
+          - name: PAID_AT
+            description: Payment timestamp as text.
+      - name: RAW_GUILDS
+        identifier: RAW_GUILDS
+        description: Raw guild dimension.
+        columns:
+          - name: GUILD_ID
+            description: Primary guild identifier.
+            data_tests:
+              - not_null
+              - unique
+          - name: GUILD_NAME
+            description: Guild name.
+          - name: FOUNDED_YEAR
+            description: Guild founded year as text.
+      - name: RAW_GUILD_MEMBERSHIPS
+        identifier: RAW_GUILD_MEMBERSHIPS
+        description: Raw customer guild membership intervals.
+        columns:
+          - name: MEMBERSHIP_ID
+            description: Primary membership identifier.
+            data_tests:
+              - not_null
+              - unique
+          - name: CUSTOMER_ID
+            description: Customer identifier.
+          - name: GUILD_ID
+            description: Guild identifier.
+          - name: TIER
+            description: Raw membership tier.
+          - name: VALID_FROM
+            description: Membership start date as text.
+          - name: VALID_TO
+            description: Membership end date as text.
+      - name: RAW_BREW_EVENTS
+        identifier: RAW_BREW_EVENTS
+        description: Raw potion production events.
+        columns:
+          - name: BREW_ID
+            description: Primary brew event identifier.
+            data_tests:
+              - not_null
+              - unique
+          - name: POTION_SKU
+            description: Potion SKU brewed.
+          - name: SHOP_ID
+            description: Shop identifier.
+          - name: CAULDRON_ID
+            description: Cauldron identifier.
+          - name: BREWED_AT
+            description: Brew timestamp as text.
+          - name: BATCH_SIZE
+            description: Produced quantity as text.
+          - name: BREW_DURATION_MINUTES
+            description: Brew duration in minutes as text.
+          - name: QUALITY_CHECK
+            description: Raw quality check result.
+          - name: BREWER_NAME
+            description: Brewer name.

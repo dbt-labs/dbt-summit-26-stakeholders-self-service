@@ -1,0 +1,13 @@
+merlin-co:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      threads: 6
+      password: {PAT} # this SF account does not allow for MFA/SSO or password use; must use token
+      account: CMVGRNF-COALESCE_WORKSHOPS
+      user: {snowflake-user}
+      database: ANALYTICS_WIZARD
+      warehouse: TRANSFORMER_COALESCE
+      schema: dbt_{flastname}
+      role: TRANSFORMER

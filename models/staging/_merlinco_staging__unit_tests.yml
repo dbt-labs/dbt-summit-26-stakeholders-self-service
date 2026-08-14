@@ -1,0 +1,86 @@
+version: 2
+
+unit_tests:
+  - name: test_merlinco_customer_region_canonicalization
+    description: Canonicalizes region codes and case variants.
+    model: stg_merlinco_customers
+    given:
+      - input: source('merlinco_apothecaries', 'RAW_CUSTOMERS')
+        rows:
+          - {CUSTOMER_ID: C1, FULL_NAME: Ada, EMAIL: ADA@EXAMPLE.COM, HOME_REGION: nr, SIGNED_UP_AT: '2026-01-01', BIRTH_YEAR: '1990', FAVORED_DISCIPLINE: Charms}
+          - {CUSTOMER_ID: C2, FULL_NAME: Bert, EMAIL: BERT@EXAMPLE.COM, HOME_REGION: Ember Coast, SIGNED_UP_AT: '2026-01-02', BIRTH_YEAR: '1991', FAVORED_DISCIPLINE: Alchemy}
+          - {CUSTOMER_ID: C3, FULL_NAME: Cora, EMAIL: CORA@EXAMPLE.COM, HOME_REGION: crystal vale, SIGNED_UP_AT: '2026-01-03', BIRTH_YEAR: '1992', FAVORED_DISCIPLINE: Potions}
+    expect:
+      rows:
+        - {customer_id: C1, home_region: Northern Reaches}
+        - {customer_id: C2, home_region: Ember Coast}
+        - {customer_id: C3, home_region: Crystal Vale}
+
+  - name: test_merlinco_boolean_normalization
+    description: Normalizes common truthy and falsy string variants.
+    model: stg_merlinco_ingredients
+    given:
+      - input: source('merlinco_apothecaries', 'RAW_INGREDIENTS')
+        rows:
+          - {INGREDIENT_ID: I1, INGREDIENT_NAME: Moon Dust, SUPPLIER_ID: S1, UNIT: Gram, UNIT_COST_COPPER: '125', IS_HAZARDOUS: Y, HARVEST_SEASON: Winter}
+          - {INGREDIENT_ID: I2, INGREDIENT_NAME: Sun Petal, SUPPLIER_ID: S1, UNIT: Vial, UNIT_COST_COPPER: '50', IS_HAZARDOUS: no, HARVEST_SEASON: Summer}
+          - {INGREDIENT_ID: I3, INGREDIENT_NAME: Bog Root, SUPPLIER_ID: S1, UNIT: Sprig, UNIT_COST_COPPER: '75', IS_HAZARDOUS: TRUE, HARVEST_SEASON: Spring}
+          - {INGREDIENT_ID: I4, INGREDIENT_NAME: River Salt, SUPPLIER_ID: S1, UNIT: Pinch, UNIT_COST_COPPER: '25', IS_HAZARDOUS: FALSE, HARVEST_SEASON: Autumn}
+    expect:
+      rows:
+        - {ingredient_id: I1, is_hazardous: true, unit: gram, unit_cost_gold: 1.25}
+        - {ingredient_id: I2, is_hazardous: false, unit: vial, unit_cost_gold: 0.50}
+        - {ingredient_id: I3, is_hazardous: true, unit: sprig, unit_cost_gold: 0.75}
+        - {ingredient_id: I4, is_hazardous: false, unit: pinch, unit_cost_gold: 0.25}
+
+  - name: test_merlinco_categorical_lowercasing
+    description: Lowercases brew quality checks.
+    model: stg_merlinco_brew_events
+    given:
+      - input: source('merlinco_apothecaries', 'RAW_BREW_EVENTS')
+        rows:
+          - {BREW_ID: B1, POTION_SKU: P1, SHOP_ID: SH1, CAULDRON_ID: C1, BREWED_AT: '2026-01-01', BATCH_SIZE: '10', BREW_DURATION_MINUTES: '45', QUALITY_CHECK: PASS, BREWER_NAME: Merlin}
+          - {BREW_ID: B2, POTION_SKU: P2, SHOP_ID: SH1, CAULDRON_ID: C2, BREWED_AT: '2026-01-02', BATCH_SIZE: '8', BREW_DURATION_MINUTES: '60', QUALITY_CHECK: Fail, BREWER_NAME: Morgana}
+    expect:
+      rows:
+        - {brew_id: B1, quality_check: pass}
+        - {brew_id: B2, quality_check: fail}
+
+  - name: test_merlinco_order_status_lowercasing
+    description: Lowercases order statuses and channels.
+    model: stg_merlinco_orders
+    given:
+      - input: source('merlinco_apothecaries', 'RAW_ORDERS')
+        rows:
+          - {ORDER_ID: O1, CUSTOMER_ID: C1, SHOP_ID: SH1, ORDERED_AT: '2026-01-01', STATUS: COMPLETED, CHANNEL: in_store, DISCOUNT_COPPER: '0'}
+          - {ORDER_ID: O2, CUSTOMER_ID: C2, SHOP_ID: SH1, ORDERED_AT: '2026-01-02', STATUS: Returned, CHANNEL: courier_owl, DISCOUNT_COPPER: '100'}
+    expect:
+      rows:
+        - {order_id: O1, order_status: completed, order_channel: in_store}
+        - {order_id: O2, order_status: returned, order_channel: courier_owl}
+
+  - name: test_merlinco_membership_tier_lowercasing
+    description: Lowercases guild membership tiers.
+    model: stg_merlinco_guild_memberships
+    given:
+      - input: source('merlinco_apothecaries', 'RAW_GUILD_MEMBERSHIPS')
+        rows:
+          - {MEMBERSHIP_ID: M1, CUSTOMER_ID: C1, GUILD_ID: G1, TIER: APPRENTICE, VALID_FROM: '2026-01-01', VALID_TO: null}
+          - {MEMBERSHIP_ID: M2, CUSTOMER_ID: C2, GUILD_ID: G2, TIER: Archmage, VALID_FROM: '2026-01-01', VALID_TO: null}
+    expect:
+      rows:
+        - {membership_id: M1, membership_tier: apprentice}
+        - {membership_id: M2, membership_tier: archmage}
+
+  - name: test_merlinco_recipe_unit_lowercasing
+    description: Lowercases recipe units.
+    model: stg_merlinco_potion_ingredients
+    given:
+      - input: source('merlinco_apothecaries', 'RAW_POTION_INGREDIENTS')
+        rows:
+          - {POTION_SKU: P1, INGREDIENT_ID: I1, QUANTITY: '2', UNIT: GRAM}
+          - {POTION_SKU: P1, INGREDIENT_ID: I2, QUANTITY: '1', UNIT: Vial}
+    expect:
+      rows:
+        - {potion_sku: P1, ingredient_id: I1, unit: gram}
+        - {potion_sku: P1, ingredient_id: I2, unit: vial}

@@ -1,0 +1,23 @@
+select
+    order_id,
+    customer_id,
+    shop_id,
+    ordered_at,
+    ordered_date,
+    order_status,
+    order_channel,
+    order_item_count,
+    total_quantity,
+    gross_revenue_gold,
+    discount_gold,
+    net_revenue_gold,
+    first_paid_at,
+    last_paid_at,
+    payment_attempt_count,
+    successful_payment_count,
+    failed_payment_count,
+    refunded_payment_count,
+    successful_payment_gold,
+    failed_payment_gold,
+    refunded_payment_gold
+from {{ ref('int_merlinco_order_financial_rollup') }}

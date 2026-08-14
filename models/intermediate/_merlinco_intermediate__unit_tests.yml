@@ -1,0 +1,79 @@
+version: 2
+
+unit_tests:
+  - name: test_merlinco_discount_allocation
+    description: Allocates order discount proportionally by line gross revenue.
+    model: int_merlinco_order_items_enriched
+    given:
+      - input: ref('stg_merlinco_order_items')
+        rows:
+          - {order_item_id: OI1, order_id: O1, potion_sku: P1, quantity: 1, unit_price_gold: 30.00, unit_price_copper: 3000}
+          - {order_item_id: OI2, order_id: O1, potion_sku: P2, quantity: 2, unit_price_gold: 10.00, unit_price_copper: 1000}
+      - input: ref('stg_merlinco_orders')
+        rows:
+          - {order_id: O1, customer_id: C1, shop_id: SH1, ordered_at: '2026-01-01 10:00:00', ordered_date: '2026-01-01', order_status: completed, order_channel: in_store, discount_gold: 5.00}
+      - input: ref('stg_merlinco_potions')
+        rows:
+          - {potion_sku: P1, category: healing}
+          - {potion_sku: P2, category: luck}
+    expect:
+      rows:
+        - {order_item_id: OI1, line_gross_gold: 30.00, allocated_discount_gold: 3.00, line_net_gold: 27.00}
+        - {order_item_id: OI2, line_gross_gold: 20.00, allocated_discount_gold: 2.00, line_net_gold: 18.00}
+
+  - name: test_merlinco_payment_aggregation_by_status
+    description: Aggregates payment attempts by status without multiplying orders.
+    model: int_merlinco_payments_by_order
+    given:
+      - input: ref('stg_merlinco_payments')
+        rows:
+          - {payment_id: PM1, order_id: O1, payment_method: coin, amount_gold: 10.00, payment_status: success, paid_at: '2026-01-01 10:00:00'}
+          - {payment_id: PM2, order_id: O1, payment_method: coin, amount_gold: 4.00, payment_status: failed, paid_at: '2026-01-01 10:01:00'}
+          - {payment_id: PM3, order_id: O1, payment_method: coin, amount_gold: 2.00, payment_status: refunded, paid_at: '2026-01-01 10:02:00'}
+    expect:
+      rows:
+        - {order_id: O1, payment_attempt_count: 3, successful_payment_count: 1, failed_payment_count: 1, refunded_payment_count: 1, successful_payment_gold: 10.00, failed_payment_gold: 4.00, refunded_payment_gold: 2.00}
+
+  - name: test_merlinco_current_guild_membership_filter
+    description: Keeps only memberships active as of current_date.
+    model: int_merlinco_current_guild_memberships
+    given:
+      - input: ref('stg_merlinco_guild_memberships')
+        rows:
+          - {membership_id: M1, customer_id: C1, guild_id: G1, membership_tier: adept, valid_from: '2026-01-01', valid_to: null}
+          - {membership_id: M2, customer_id: C1, guild_id: G2, membership_tier: apprentice, valid_from: '2025-01-01', valid_to: '2025-12-31'}
+          - {membership_id: M3, customer_id: C2, guild_id: G1, membership_tier: archmage, valid_from: '2027-01-01', valid_to: null}
+    expect:
+      rows:
+        - {membership_id: M1, customer_id: C1, guild_id: G1, membership_tier: adept}
+
+  - name: test_merlinco_ingredient_supplier_enrichment
+    description: Joins supplier name onto ingredients and leaves non-joinable supplier null.
+    model: int_merlinco_ingredients_enriched
+    given:
+      - input: ref('stg_merlinco_ingredients')
+        rows:
+          - {ingredient_id: I1, ingredient_name: Moon Dust, supplier_id: S1, unit: gram, unit_cost_copper: 125.00, unit_cost_gold: 1.25, is_hazardous: true, harvest_season: winter}
+          - {ingredient_id: I2, ingredient_name: Sun Petal, supplier_id: S2, unit: vial, unit_cost_copper: 50.00, unit_cost_gold: 0.50, is_hazardous: false, harvest_season: summer}
+      - input: ref('stg_merlinco_suppliers')
+        rows:
+          - {supplier_id: S1, supplier_name: Northern Reaches Botanicals, region: Northern Reaches, reliability_rating: 4.50, contracted_since: '2025-01-01'}
+    expect:
+      rows:
+        - {ingredient_id: I1, ingredient_name: Moon Dust, supplier_id: S1, supplier_name: Northern Reaches Botanicals, unit: gram, unit_cost_copper: 125.00, unit_cost_gold: 1.25, is_hazardous: true, harvest_season: winter}
+        - {ingredient_id: I2, ingredient_name: Sun Petal, supplier_id: S2, supplier_name: null, unit: vial, unit_cost_copper: 50.00, unit_cost_gold: 0.50, is_hazardous: false, harvest_season: summer}
+
+  - name: test_merlinco_membership_current_flag
+    description: Marks is_current_membership true only for the currently active membership.
+    model: int_merlinco_customer_guild_memberships
+    given:
+      - input: ref('stg_merlinco_guild_memberships')
+        rows:
+          - {membership_id: M1, customer_id: C1, guild_id: G1, membership_tier: adept, valid_from: '2025-01-01', valid_to: '2025-12-31'}
+          - {membership_id: M2, customer_id: C1, guild_id: G2, membership_tier: apprentice, valid_from: '2026-01-01', valid_to: null}
+          - {membership_id: M3, customer_id: C2, guild_id: G1, membership_tier: archmage, valid_from: '2027-01-01', valid_to: null}
+    expect:
+      rows:
+        - {membership_id: M1, customer_id: C1, guild_id: G1, membership_tier: adept, is_current_membership: false}
+        - {membership_id: M2, customer_id: C1, guild_id: G2, membership_tier: apprentice, is_current_membership: true}
+        - {membership_id: M3, customer_id: C2, guild_id: G1, membership_tier: archmage, is_current_membership: false}

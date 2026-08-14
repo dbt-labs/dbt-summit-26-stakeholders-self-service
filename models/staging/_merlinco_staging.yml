@@ -1,0 +1,260 @@
+version: 2
+
+models:
+  - name: stg_merlinco_customers
+    description: Cleaned customer records with canonical home regions.
+    columns:
+      - name: customer_id
+        description: Primary customer identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: home_region
+        description: Canonical customer home region.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Northern Reaches', 'Ember Coast', 'Silverwood', 'The Marshlands', 'Crystal Vale']
+  - name: stg_merlinco_shops
+    description: Cleaned shop locations.
+    columns:
+      - name: shop_id
+        description: Primary shop identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: region
+        description: Canonical shop region.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Northern Reaches', 'Ember Coast', 'Silverwood', 'The Marshlands', 'Crystal Vale']
+  - name: stg_merlinco_suppliers
+    description: Cleaned supplier records.
+    columns:
+      - name: supplier_id
+        description: Primary supplier identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: region
+        description: Canonical supplier region.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Northern Reaches', 'Ember Coast', 'Silverwood', 'The Marshlands', 'Crystal Vale']
+  - name: stg_merlinco_ingredients
+    description: Cleaned ingredient catalog with costs converted to gold.
+    columns:
+      - name: ingredient_id
+        description: Primary ingredient identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: supplier_id
+        description: Supplier identifier.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_merlinco_suppliers')
+                field: supplier_id
+      - name: unit
+        description: Lowercase ingredient unit.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['pinch', 'sprig', 'bundle', 'gram', 'dram', 'vial']
+      - name: is_hazardous
+        description: Normalized hazardous boolean flag.
+        data_tests:
+          - not_null
+  - name: stg_merlinco_potions
+    description: Cleaned potion catalog with prices converted to gold.
+    columns:
+      - name: potion_sku
+        description: Primary potion SKU.
+        data_tests:
+          - not_null
+          - unique
+      - name: category
+        description: Lowercase potion category.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['love', 'clarity', 'healing', 'invisibility', 'luck', 'strength']
+      - name: is_regulated
+        description: Normalized regulated boolean flag.
+        data_tests:
+          - not_null
+  - name: stg_merlinco_potion_ingredients
+    description: Cleaned potion recipe bridge.
+    columns:
+      - name: potion_sku
+        description: Potion SKU.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_merlinco_potions')
+                field: potion_sku
+      - name: ingredient_id
+        description: Ingredient identifier.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_merlinco_ingredients')
+                field: ingredient_id
+      - name: unit
+        description: Lowercase recipe unit.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['pinch', 'sprig', 'bundle', 'gram', 'dram', 'vial']
+  - name: stg_merlinco_orders
+    description: Cleaned order headers.
+    columns:
+      - name: order_id
+        description: Primary order identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Customer identifier.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_merlinco_customers')
+                field: customer_id
+      - name: shop_id
+        description: Shop identifier.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_merlinco_shops')
+                field: shop_id
+      - name: order_status
+        description: Lowercase order status.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['completed', 'returned', 'cancelled', 'placed']
+      - name: order_channel
+        description: Lowercase order channel.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['in_store', 'courier_owl', 'marketplace']
+  - name: stg_merlinco_order_items
+    description: Cleaned order item lines.
+    columns:
+      - name: order_item_id
+        description: Primary order item identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Order identifier.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_merlinco_orders')
+                field: order_id
+      - name: potion_sku
+        description: Potion SKU.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_merlinco_potions')
+                field: potion_sku
+  - name: stg_merlinco_payments
+    description: Cleaned payment attempts.
+    columns:
+      - name: payment_id
+        description: Primary payment identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: Order identifier.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_merlinco_orders')
+                field: order_id
+      - name: payment_method
+        description: Lowercase payment method.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['coin', 'guild_credit', 'crystal_transfer', 'barter']
+      - name: payment_status
+        description: Lowercase payment status.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['success', 'failed', 'refunded']
+  - name: stg_merlinco_guilds
+    description: Cleaned guild dimension.
+    columns:
+      - name: guild_id
+        description: Primary guild identifier.
+        data_tests:
+          - not_null
+          - unique
+  - name: stg_merlinco_guild_memberships
+    description: Cleaned customer guild membership intervals.
+    columns:
+      - name: membership_id
+        description: Primary membership identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: Customer identifier.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_merlinco_customers')
+                field: customer_id
+      - name: guild_id
+        description: Guild identifier.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_merlinco_guilds')
+                field: guild_id
+      - name: membership_tier
+        description: Lowercase membership tier.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['apprentice', 'adept', 'archmage']
+  - name: stg_merlinco_brew_events
+    description: Cleaned potion production events.
+    columns:
+      - name: brew_id
+        description: Primary brew event identifier.
+        data_tests:
+          - not_null
+          - unique
+      - name: potion_sku
+        description: Potion SKU.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_merlinco_potions')
+                field: potion_sku
+      - name: shop_id
+        description: Shop identifier.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_merlinco_shops')
+                field: shop_id
+      - name: quality_check
+        description: Lowercase quality check result.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['pass', 'fail']
