@@ -4,11 +4,6 @@ Companion dbt project for the hands-on lab **"[SESSION TITLE TBD]"** at dbt Summ
 
 **Session page:** [TBD]
 
-> This project reuses the Merlinco Apothecaries dataset and models originally built for the
-> "Creating context with the dbt MCP server" lab
-> ([dbt-labs/dbt-summit-26-mcp-server](https://github.com/dbt-labs/dbt-summit-26-mcp-server)).
-> The two labs are separate — this repo is the source of truth for the self-service lab.
-
 ---
 
 ## Source data
