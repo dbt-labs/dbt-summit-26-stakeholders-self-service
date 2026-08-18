@@ -22,7 +22,7 @@ Pick your most-used mart — the one hundreds of decisions run through — and s
 - [ ] At least one registered exposure
 
 **Safely consumable** (Lesson 5)
-- [ ] `access: public` on the curated interface, `private` on implementation detail — but note that `private` means "only the same group may `ref` it", so a private intermediate model needs every downstream consumer in its group or the project stops parsing
+- [ ] `access: public` on the curated interface, and everything else left at dbt's `protected` default. Reach for `private` only deliberately: it means "only the same group may `ref` it", so without a group it does nothing at all, and with one every downstream consumer has to join that group or the project stops parsing
 - [ ] An enforced contract on the columns stakeholders depend on
 
 Most teams score two or three. The gap is almost never capability — it's that nobody owns consumability as a deliverable.

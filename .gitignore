@@ -4,3 +4,6 @@ logs/
 dbt_packages/
 .env
 dbt_internal_packages/
+
+# Working archive of the original course scaffold; contains the Lab 1 answer key.
+stakeholders-self-service-scaffold.zip

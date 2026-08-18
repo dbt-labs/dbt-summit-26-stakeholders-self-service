@@ -32,7 +32,9 @@ One sentence, business language, no warehouse vocabulary. If it contains "table"
 
 What it's *for*, and — critically — what it is **not** for. The "not for" line prevents more incidents than any test you'll ever write.
 
-> ✅ "Use for revenue and unit-volume reporting by shop, region, potion, and channel. **Do not** use for inventory on hand — brewing isn't netted against sales here; use `fct_brew_events`."
+> ✅ "Use for revenue and unit-volume reporting by shop, region, potion, and channel. **Do not** use for inventory on hand — and note there's no data product that answers that today: `fct_brew_events` has units brewed, but nothing nets brewing against sales."
+
+Notice what the second half does. "Do not use this for X" is only half an answer; naming what *would* answer it — or admitting nothing does — is what stops someone building it wrong anyway.
 
 ## 3. What's the grain?
 

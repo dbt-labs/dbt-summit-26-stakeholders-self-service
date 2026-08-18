@@ -64,9 +64,9 @@ haven't checked.
 | Lab | Lesson | Time | Most likely stall |
 |---|---|---|---|
 | 1 Document | L2 | 15 | Perfectionism on column docs. Push them to 4–5 columns and move on. Watch for anyone writing lab notes *inside* a docs block — it all ships to the catalog. |
-| 2 Trust signals | L3 | 15 | `freshness` / `loaded_at_field` at the top level instead of under `config:` (`dbt1060`) — this is the first YAML edit of the day, so it lands hard. Then `dbt source freshness` erroring on static data reading as their mistake. |
+| 2 Trust signals | L3 | 15 | `freshness` / `loaded_at_field` at the top level instead of under `config:` (`dbt1060`) — this is the first YAML edit of the day, so it lands hard. Then `dbt source freshness` erroring on static data reading as their mistake. The business-assumption test now points at `unit_price_gold`, which nothing in the project asserts today — steer people off `quantity`, which `no_negative_merlinco_amounts.sql` mostly covers. |
 | 3 Ownership | L4 | 7 | Exposure YAML shape. Have the snippet ready to paste — this is guided, not discovery. |
-| 4 Access | L5 | 12 | Contracts require `data_type` on every column — and `fct_order_items` has 7 columns not yet in the YAML at all, so it's 16 entries to author, not 9. Point anyone short on time at `dim_shops` (5 columns). Step 1 is now `public` plus dbt's default `protected`; nobody should be setting `private`, and if they do, expect dbt1066. |
+| 4 Access | L5 | 12 | Contracts require `data_type` on every column — and `fct_order_items` has 7 columns not yet in the YAML at all, so it's 16 entries to author, not 9. Point anyone short on time at `dim_shops` (5 columns). Step 1 is now `public` plus dbt's default `protected`; nobody should be setting `private`. If someone does and there's no group, it parses clean and enforces nothing — the trap is silence, not an error. |
 
 At 120 people, assume the slowest table is 6–8 minutes behind. Each lab is written so partial completion still lands the point.
 
@@ -90,7 +90,7 @@ While one instructor teaches, the other should be floating. At this room size th
 
 The labs were drafted as if the marts were thin — undocumented, untested, unowned. They aren't.
 `models/marts/_merlinco_marts.yml` carries developer-grade descriptions, grain-key tests, and a
-full semantic layer (entities, dimensions, ~20 metrics).
+full semantic layer (entities, dimensions, 16 metrics).
 
 Resolved for now by wiring only the four lab models' descriptions to doc blocks in
 `_marts__docs.md`, leaving everything else in place. The doc blocks hold the developer-grade text,
@@ -179,7 +179,9 @@ does **not** cover, all of which need checking on the sandbox before the day:
       rather than adding the scaffold's colliding `_marts__models.yml`. See "Marts starting state".
 - [ ] Confirm how attendee edits reach **dbt Catalog** — every lab ends with "see it in Catalog",
       but Catalog is built from job-run artifacts and setup only has attendees run `dbt build` once.
-      If a job run is needed, someone has to trigger it at each debrief.
+      If a job run is needed, someone has to trigger it at each debrief. The local fallback in Lab 1
+      doesn't help most of the room either: `dbt docs serve` binds a local port that attendees on
+      the platform IDE can't reach. This is the last unresolved dependency shared by all four labs.
 - [ ] Decide whether the passcode stays in the README, and move **both** `INSTRUCTOR_NOTES.md` and
       `COURSE_OUTLINE.md` out of the attendee repo before it goes public. The outline carries
       milestone dates, the instructor split, PMM flags, and a footer naming a dropped presenter.
@@ -188,7 +190,7 @@ does **not** cover, all of which need checking on the sandbox before the day:
       inherited from the seed project, while attendees are sent to `workshops.us1.dbt.com`. Editors
       auto-discover that file on repo open, so 120 people would have had a server aimed at the wrong
       account. Re-add it with the real workshop MCP endpoint if the labs need it; `git show
-      HEAD~1:.mcp.json` has the original.
+      main:.mcp.json` has the original — not `HEAD~1`, which stops resolving after the next commit.
 - [ ] Fix the region literal if any control answers are written against it — the data says
       `Northern Reaches`, and the docs said `Northern Reach` until 2026-08-14
 - [ ] Build the `solutions` branch with worked answers and control values for the question bank

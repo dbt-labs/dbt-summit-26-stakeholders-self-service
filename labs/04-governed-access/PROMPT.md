@@ -16,8 +16,8 @@ You've made a model understandable (Lab 1), believable (Lab 2), and accountable 
 
    `private` is the third option, and it's stricter than it sounds: it means "only nodes in the same group may `ref` this". Marking an intermediate model private drops the whole project's parse with `AccessDenied (dbt1066)` unless every downstream consumer joins its group — and on dbt Core that includes the tests that reference it. Worth understanding; not worth your 12 minutes. Stick to `public` and the default.
 2. **Enforce a contract** on the public mart so the columns stakeholders depend on can't silently change shape. A contract needs *every* column listed with a `data_type` — `fct_order_items` selects 16 and the YAML documents 9, so budget for the 7 you'll have to add. `dim_shops` is the smaller target if you're short on time. Then `dbt build` and watch it be enforced.
-3. **Break it on purpose.** Change a declared `data_type` in the contract to something the model doesn't actually produce — declare one of your numeric columns as `varchar`, say — and run again. Read the error as if you were the consumer who'd have been broken silently, then revert. Do this in the YAML, not the `.sql`; the contract is the promise, and breaking the promise is enough to see it enforced.
-4. **Close the loop.** Find your model in **dbt Catalog** as a stakeholder would: documented, tested, fresh, owned, certified, public, contracted. This is the product behind the answer you saw in the opening demo.
+3. **Break it on purpose.** Change a declared `data_type` in the contract to something the model doesn't actually produce — `opened_at` as `varchar` on `dim_shops`, or `quantity` as `varchar` on `fct_order_items` — and run again. Read the error as if you were the consumer who'd have been broken silently, then revert. Do this in the YAML, not the `.sql`; the contract is the promise, and breaking the promise is enough to see it enforced.
+4. **Close the loop.** Find your model in **dbt Catalog** as a stakeholder would: documented, owned, certified, public, contracted — with tests and a freshness threshold attached, some of them red on this dataset by design. That's not a failed exercise; a consumer who can *see* a stale source and a failing test is better served than one who sees nothing. This is the product behind the answer you saw in the opening demo.
 
 ## The distinction worth internalizing
 
@@ -27,7 +27,7 @@ Every grant should trace to a role, not a favor.
 
 ## Done when
 
-You have a public, contracted, documented, owned mart and a private upstream model — and you can explain to a skeptical colleague why this is *more* control than they had before, not less.
+You have a public, contracted, documented, owned mart, you can say what every other model's `protected` default means, and you can explain to a skeptical colleague why this is *more* control than they had before, not less.
 
 ## Watching the spark completed
 

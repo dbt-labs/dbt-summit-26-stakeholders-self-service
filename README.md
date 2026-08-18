@@ -40,7 +40,7 @@ Layers: `models/staging/` (views) → `models/intermediate/` (views) → `models
 2. Select **Scaling trusted self-service for dbt stakeholders**
 3. Passcode: `Summit2026!`
 4. Your account initializes from this repo — a personal target schema in `ANALYTICS_WIZARD`, read access to the `RAW_WIZARD.MERLINCO_APOTHECARIES` source
-5. Run `dbt build` once and confirm it succeeds. **Do this before Lab 1.** If it fails, flag a TA immediately.
+5. Run `dbt build` once. **Do this before Lab 1.** Some tests fail on this dataset by design — your instructor will say which — so flag a TA if you see anything beyond those, or if the build doesn't complete.
 
 Prefer local? Copy `profiles.yml.example` to `~/.dbt/profiles.yml`, then replace all three placeholders — `{snowflake-user}`, `{PAT}`, and the `{flastname}` in `schema: dbt_{flastname}` — left as-is, the first two parse as YAML mappings rather than strings and throw an error that won't look like a credentials problem, while the third silently builds every model into a schema literally named `dbt_{flastname}`. The platform IDE is the supported path today.
 
@@ -55,7 +55,7 @@ Prefer local? Copy `profiles.yml.example` to `~/.dbt/profiles.yml`, then replace
 | **L5** — Governed access & the answer surface | 22 min | 10 concept / **12 lab** → [`labs/04`](labs/04-governed-access/) |
 | **L6** — Recreate the moment + next steps | 6 min | Concept → [`docs/TAKEAWAY_CHECKLIST.md`](docs/TAKEAWAY_CHECKLIST.md) |
 
-Hands-on: 49 of 90 minutes. Each lab has a `PROMPT.md` with the task, constraints, and a "done when" bar. Solutions live on the `solutions` branch — don't peek until your table has had a real go.
+Hands-on: 49 of 90 minutes. Each lab has a `PROMPT.md` with the task and a "done when" bar. Solutions live on the `solutions` branch — don't peek until your table has had a real go.
 
 ## Reference material
 
