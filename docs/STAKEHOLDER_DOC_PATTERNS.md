@@ -44,7 +44,9 @@ What one row means, as a sentence rather than a list of key columns. Highest-val
 
 The two or three things a well-meaning person would get wrong. Specific and concrete — vague warnings get ignored.
 
-> ✅ "Refunds appear as separate rows with negative quantity, so `count(*)` overstates units sold — sum `quantity` instead. Marketplace orders arrive up to 48 hours late, so the current day is always incomplete. Prices are carried in both copper and gold; gold is the reporting standard."
+> ✅ "Returned and cancelled orders are included at full line value and nothing is netted out, so filter on `order_status` or you'll overstate revenue. Marketplace orders arrive up to 48 hours late, so the current day is always incomplete. Prices are carried in both copper and gold; gold is the reporting standard."
+
+Check every caveat you write against the models before you publish it. A plausible but false warning is worse than no warning — it's the same wrong-but-believable failure this lesson exists to prevent, just authored by you.
 
 ---
 
@@ -60,7 +62,7 @@ models:
 
 Write it once and every consumption path inherits it — the catalog, the Semantic Layer, and any AI assistant reading the project.
 
-**Ownership metadata (`meta`, groups, exposures) comes in Lesson 4.** Resist adding it now; the point of Lab 1 is that a data product can be perfectly described and still have nobody accountable for it.
+**Ownership metadata (`config.meta` owner, groups, exposures) comes in Lesson 4.** Resist adding it now; the point of Lab 1 is that a data product can be perfectly described and still have nobody accountable for it.
 
 ## The test for whether your docs are good
 

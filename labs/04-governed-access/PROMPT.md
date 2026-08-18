@@ -10,8 +10,8 @@ You've made a model understandable (Lab 1), believable (Lab 2), and accountable 
 
 ## Your task
 
-1. **Set access.** Mark your documented marts `access: public` — this is the curated interface stakeholders may build on. Mark an intermediate or work-in-progress model `access: private`. Notice you've just drawn the line between "data product" and "implementation detail", and it's enforced rather than merely hoped for.
-2. **Enforce a contract** on the public mart so the columns stakeholders depend on can't silently change shape. Add the `data_type` entries the contract requires, then `dbt build` and watch it be enforced.
+1. **Set access.** Mark your documented marts `access: public` under `config:` (top-level `access` is silently ignored — `dbt1060`) — this is the curated interface stakeholders may build on. Mark an intermediate or work-in-progress model `access: private`. Notice you've just drawn the line between "data product" and "implementation detail", and it's enforced rather than merely hoped for.
+2. **Enforce a contract** on the public mart so the columns stakeholders depend on can't silently change shape. A contract needs *every* column listed with a `data_type` — `fct_order_items` selects 16 and the YAML documents 9, so budget for the 7 you'll have to add. `dim_shops` is the smaller target if you're short on time. Then `dbt build` and watch it be enforced.
 3. **Break it on purpose.** Rename or retype a contracted column and run again. Read the error as if you were the consumer who'd have been broken silently. Then revert.
 4. **Close the loop.** Find your model in **dbt Catalog** as a stakeholder would: documented, tested, fresh, owned, certified, public, contracted. This is the product behind the answer you saw in the opening demo.
 

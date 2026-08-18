@@ -14,7 +14,7 @@ Everything you do happens in YAML, Markdown, and the dbt platform UI. If you're 
 
 ## The five components of trusted self-service
 
-The first three make a data product *trustworthy*. The fourth makes someone *accountable* for it. The fifth turns trusted products into trusted **answers**.
+The first three make a data product *trustworthy* — and the first of them, people, is what makes someone *accountable* for it. The fourth makes it safely consumable. The fifth turns trusted products into trusted **answers**.
 
 1. **People** — clear ownership; someone stands behind the data
 2. **Process** — workflows for questions, requests, and change management
@@ -39,10 +39,10 @@ Layers: `models/staging/` (views) → `models/intermediate/` (views) → `models
 1. Incognito window → **workshops.us1.dbt.com/workshop**
 2. Select **Scaling trusted self-service for dbt stakeholders**
 3. Passcode: `Summit2026!`
-4. Your account initializes from this repo — personal schema in `dbt_learn`, read access to `RAW`
+4. Your account initializes from this repo — a personal target schema in `ANALYTICS_WIZARD`, read access to the `RAW_WIZARD.MERLINCO_APOTHECARIES` source
 5. Run `dbt build` once and confirm it succeeds. **Do this before Lab 1.** If it fails, flag a TA immediately.
 
-Prefer local? Copy `profiles.yml.example` to `~/.dbt/profiles.yml`. The platform IDE is the supported path today.
+Prefer local? Copy `profiles.yml.example` to `~/.dbt/profiles.yml`, then replace the `{snowflake-user}` and `{PAT}` placeholders with your own — left as-is they parse as YAML mappings, not strings, and the error you get won't look like a credentials problem. The platform IDE is the supported path today.
 
 ## The 90 minutes
 

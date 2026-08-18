@@ -6,7 +6,7 @@ Used in Lab 1 (Lesson 2) and Lab 2 (Lesson 3). TAs: control answers are on the `
 
 ---
 
-### Q1 — from the Regional Director, Northern Reach
+### Q1 — from the regional director, Northern Reach
 
 > "Can you send me potion revenue by region for last quarter? I want to compare against the shop targets."
 
@@ -14,7 +14,7 @@ Used in Lab 1 (Lesson 2) and Lab 2 (Lesson 3). TAs: control answers are on the `
 
 ---
 
-### Q2 — from the Guild Partnerships Manager
+### Q2 — from the guild partnerships manager
 
 > "How many customers do we have in the Alchemists' Guild, and what's their average order value?"
 
@@ -22,7 +22,7 @@ Used in Lab 1 (Lesson 2) and Lab 2 (Lesson 3). TAs: control answers are on the `
 
 ---
 
-### Q3 — from the Head of Retail Ops
+### Q3 — from the head of retail ops
 
 > "Yesterday's sales look way down versus the day before. What's going on?"
 

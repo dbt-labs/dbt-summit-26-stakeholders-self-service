@@ -15,14 +15,14 @@ Take **one** mart model — `fct_order_items` is the richest, `dim_potions` the 
 1. Open [`docs/QUESTION_BANK.md`](../../docs/QUESTION_BANK.md). Try to answer one question using only what's documented today. Write down every point where you had to guess.
 2. Rewrite the model's doc block in `models/marts/_marts__docs.md` to answer the four questions from [`docs/STAKEHOLDER_DOC_PATTERNS.md`](../../docs/STAKEHOLDER_DOC_PATTERNS.md): what is this, when should I use it, what's the grain, what should I watch out for.
 3. Document the columns a stakeholder will actually touch — the ones that appear in a filter or a sum. Say what they *mean*, not what type they are. You do not need to document all of them.
-4. Run `dbt parse`, then `dbt docs generate` and read your own work in **dbt Catalog** the way a stakeholder would.
+4. Run `dbt parse` to confirm the YAML is valid, then `dbt compile --write-catalog` (`dbt docs generate` is deprecated in Fusion). Read your own work in **dbt Catalog** the way a stakeholder would.
 
 ## Constraints
 
 - No SQL. If you're editing a `.sql` file, stop.
 - No dbt vocabulary in the "what is this" line — no "fact", "joined", "upstream".
 - The watch-out-for section must name at least one thing that would produce a **wrong but believable** number.
-- Don't add owner or `meta` yet. That's Lab 3.
+- Don't add ownership metadata — `config.meta` owner, groups, exposures — yet. That's Lab 3.
 
 ## Done when
 

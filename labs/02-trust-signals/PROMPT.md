@@ -12,9 +12,9 @@ Trust is a product feature, and it has to be visible at the point of consumption
 
 Make the model you documented in Lab 1 legible to a skeptical stakeholder.
 
-1. **Freshness.** Add a `freshness` block to the POS orders source with `warn_after` and `error_after` reflecting the 48-hour marketplace delay. Run `dbt source freshness`.
-2. **Tests a stakeholder would care about.** Add `unique` on the grain key and `not_null` on the potion SKU. Then add one test encoding a *business* assumption — that quantity is never zero, or that every order line maps to a potion in `dim_potions`.
-3. **Mark it blessed.** Use `meta` and tags to mark maturity/certification, and set one other mart to `deprecated` with a description line naming what to use instead.
+1. **Freshness.** Add a `freshness` block to the `RAW_ORDERS` table on the `merlinco_apothecaries` source, with `warn_after` and `error_after` reflecting the 48-hour marketplace delay. `ORDERED_AT` is stored as text, so `loaded_at_field` needs a cast — `try_to_timestamp_ntz(ORDERED_AT)`. Run `dbt source freshness`.
+2. **Tests a stakeholder would care about.** Read what `fct_order_items` already has first — `unique` and `not_null` on the grain key, and a `relationships` test on `potion_sku`. Then add what's genuinely missing: `not_null` on `potion_sku`, and one test encoding a *business* assumption, such as quantity never being zero. Check `tests/singular/` before writing one; several assumptions are already covered there.
+3. **Mark it blessed.** Use `config.meta` and tags to mark maturity/certification, and set one other mart to `deprecated` with a description line naming what to use instead. Mind the nesting: `meta` at the top level of a model is rejected as an unexpected key (`dbt1060`).
 4. Explore **lineage and model health in dbt Catalog** from the consumer's point of view. Not the developer's.
 
 For each signal, be ready to say in one sentence what it tells a non-technical consumer to *do differently*. A signal nobody can act on is decoration.

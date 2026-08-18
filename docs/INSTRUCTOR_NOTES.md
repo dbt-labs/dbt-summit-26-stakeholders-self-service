@@ -35,7 +35,7 @@ If it stays undecided, **record the flow anyway**. A recording costs an hour, co
 | 1 Document | L2 | 15 | Perfectionism on column docs. Push them to 4–5 columns and move on. |
 | 2 Trust signals | L3 | 15 | YAML indentation on `freshness`; the intentional test failure reading as their mistake. |
 | 3 Ownership | L4 | 7 | Exposure YAML shape. Have the snippet ready to paste — this is guided, not discovery. |
-| 4 Access | L5 | 12 | Contracts require `data_type` on every column; this trips nearly everyone. |
+| 4 Access | L5 | 12 | Contracts require `data_type` on every column — and `fct_order_items` has 7 columns not yet in the YAML at all, so it's 16 entries to author, not 9. Point anyone short on time at `dim_shops`. |
 
 At 120 people, assume the slowest table is 6–8 minutes behind. Each lab is written so partial completion still lands the point.
 
@@ -55,24 +55,50 @@ While one instructor teaches, the other should be floating. At this room size th
 
 **dbt platform** (not "dbt Cloud"), **dbt Catalog**, **dbt Copilot**, **Semantic Layer**, **dbt MCP server**. Naming is mid-transition — confirm with PMM before the deck locks, and check whether "certification" is the current label for maturity markers in Catalog.
 
-## Marts starting state — unresolved
+## Marts starting state
 
-The labs assume the marts are thin: undocumented, untested, unowned. The project as inherited is
-not thin. `models/marts/_merlinco_marts.yml` already carries developer-grade descriptions, `unique`
-/ `not_null` / `relationships` tests on every grain key, and a full semantic layer — entities,
-dimensions, and ~20 metrics.
+The labs were drafted as if the marts were thin — undocumented, untested, unowned. They aren't.
+`models/marts/_merlinco_marts.yml` carries developer-grade descriptions, grain-key tests, and a
+full semantic layer (entities, dimensions, ~20 metrics).
 
-What that means per lab:
+Resolved for now by wiring only the four lab models' descriptions to doc blocks in
+`_marts__docs.md`, leaving everything else in place. The doc blocks hold the developer-grade text,
+so Lab 1 still has a real "before" to rewrite, and the semantic models and metrics — what any
+Semantic Layer demo runs on — are untouched.
 
-| Lab | Work still genuinely missing? |
+What that leaves per lab:
+
+| Lab | Work genuinely missing |
 |---|---|
-| 1 Document | Mostly. Descriptions exist but are developer-grade ("Order item fact at one row per order line") — a fair "before" state, though thinner than the scaffold assumes. Column descriptions are already filled in and would need stripping. |
-| 2 Trust signals | Partly. Freshness is genuinely absent. But `unique` on the grain key and `not_null` on the SKU **already exist** — as written, that step is a no-op. |
+| 1 Document | Yes. Doc blocks are developer-grade prose; column descriptions are terse one-liners. Real work, though less of a blank page than the scaffold assumed. |
+| 2 Trust signals | Partly. Freshness is absent, and `not_null` on `potion_sku` is absent. But `unique` + `not_null` on the grain key and the `relationships` test on `potion_sku` **already exist** — the prompt now tells attendees to read those first rather than re-add them. |
 | 3 Ownership | Yes. No `meta` owner, no groups, no exposures anywhere. |
 | 4 Access | Yes. No `access`, no contracts anywhere. |
 
-Whatever we choose, the semantic models and metrics are worth protecting — they're what a Semantic
-Layer spark demo would run on.
+**Still open:** whether to strip further for a cleaner blank-page moment in Lab 1. Doing so means
+deciding what happens to the grain-key tests and the semantic layer.
+
+## Fusion config nesting — brief the TAs on this
+
+`access`, `group` and `meta` are **rejected at the top level of a model** by the engine in this
+project (dbt-fusion): `[error] [UnusedConfigKey (dbt1060)]: Ignored unexpected key "access"`. They
+must be nested under `config:`. Every dbt doc and blog post shows the top-level form, so expect
+this in Lab 3 step 1, Lab 3 step 2, and Lab 4 step 1 — likely the single biggest source of raised
+hands in the back half. The prompts now say so, but attendees pattern-match to docs they already
+know.
+
+```yaml
+  - name: dim_potions
+    config:
+      access: public
+      group: commerce_analytics
+      meta:
+        owner: commerce-analytics
+```
+
+Note also that `access: private` without a group is a parse-time error in dbt Core but is **not**
+enforced by Fusion preview — so Lab 4 step 1's failure mode depends on which engine the workshop
+accounts run. Worth pinning down.
 
 ## Open items
 
@@ -81,8 +107,12 @@ Layer spark demo would run on.
 - [x] Verify mart names in this repo match the YAML scaffold — confirmed 2026-08-14. All four lab
       models exist (`fct_order_items`, `dim_potions`, `dim_shops`, `dim_customers`), as do the
       referenced columns (`unit_price_gold`, `recipe_unit_cost_gold`, `home_region`, `region`).
-- [ ] **Decide the marts starting state** — the scaffold's `_marts__models.yml` collides with the
-      existing `_merlinco_marts.yml` (dbt error `dbt1005`, duplicate resource definitions). See
-      "Marts starting state" below. Blocks committing the scaffold YAML.
+- [x] Marts starting state — resolved 2026-08-14 by wiring the four lab models to doc blocks
+      rather than adding the scaffold's colliding `_marts__models.yml`. See "Marts starting state".
+- [ ] Confirm how attendee edits reach **dbt Catalog** — every lab ends with "see it in Catalog",
+      but Catalog is built from job-run artifacts and setup only has attendees run `dbt build` once.
+      If a job run is needed, someone has to trigger it at each debrief.
+- [ ] Decide whether the passcode stays in the README, and move `INSTRUCTOR_NOTES.md` out of the
+      attendee repo, before it goes public
 - [ ] Build the `solutions` branch with worked answers and control values for the question bank
 - [ ] Coordinate with the Semantic Layer and MCP lab teams so the spark demo complements rather than duplicates their sessions

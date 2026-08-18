@@ -6,9 +6,9 @@ Short and tightly scoped. The concept discussion carries this lesson; the build 
 
 ## Your task
 
-1. **Add an owner.** Put `meta` on your mart: `owner`, `support_channel`, `response_sla`, `maturity`. Use a *team* name, never an individual — people change jobs, and an owner with no stated response expectation isn't an owner.
-2. **Define a group.** Create a group in `models/marts/_marts__models.yml` and assign your marts to it, so ownership is structural rather than a comment.
-3. **Add an exposure.** Define an `exposure` for the Regional Director's revenue dashboard, depending on your mart plus `dim_shops`. Include an owner name and email.
+1. **Add an owner.** Put `meta` on your mart under `config:` — `owner`, `support_channel`, `response_sla`, `maturity`. Top-level `meta`, `group` and `access` are rejected as unexpected keys (`dbt1060`); they must be nested under `config:`. Use a *team* name, never an individual — people change jobs, and an owner with no stated response expectation isn't an owner.
+2. **Define a group.** Create a top-level `groups:` block in `models/marts/_merlinco_marts.yml` and assign your marts to it with `config.group`, so ownership is structural rather than a comment.
+3. **Add an exposure.** Define an `exposure` for the regional director's revenue dashboard, depending on your mart plus `dim_shops`. Include an owner name and email.
 4. Look at the exposure in **dbt Catalog**. That's the answer to "who breaks if I change this?" — available to you for the first time.
 
 ## Why the exposure matters more than it looks

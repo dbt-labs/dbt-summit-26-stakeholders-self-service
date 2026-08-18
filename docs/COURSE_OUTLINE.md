@@ -1,4 +1,4 @@
-# Course Outline — dbt Summit HOL
+# Course outline — dbt Summit HOL
 
 **Course title:** Scaling trusted self-service for dbt stakeholders
 
@@ -30,7 +30,7 @@ Scale dbt beyond the build team by enabling stakeholders to find, understand, an
 
 By the end of this course, you will be able to:
 
-1. **Define** the components of trusted self-service across people, process, platform signals, and the governed answer surface.
+1. **Define** the components of trusted self-service across people, process, platform signals, governed access, and the governed answer surface.
 2. **Implement** stakeholder-friendly documentation patterns—definitions, intended use, grain, and caveats—directly in your dbt project.
 3. **Establish** ownership and support workflows for questions, requests, and change management.
 4. **Design** a scalable stakeholder access model—including a governed answer surface—that expands consumption while protecting developer workflows.
@@ -39,7 +39,7 @@ By the end of this course, you will be able to:
 
 ## The framework (five components)
 
-Trusted self-service stands on five things. The first three make a data product *trustworthy*; the fourth makes someone *accountable* for it; the fifth turns trusted products into trusted **answers**—and that fifth piece is the spark.
+Trusted self-service stands on five things. The first three make a data product *trustworthy*—and the first of them, people, is what makes someone *accountable* for it; the fourth makes it safely consumable; the fifth turns trusted products into trusted **answers**—and that fifth piece is the spark.
 
 1. **People** — clear ownership; someone stands behind the data.
 2. **Process** — workflows for questions, requests, and change management.
