@@ -5,7 +5,8 @@ version: 2
 # deliberately developer-grade — accurate, and useless to a stakeholder.
 #
 #   Lab 1 (Lesson 2): rewrite those doc blocks + the column descriptions
-#   Lab 2 (Lesson 3): source freshness, the missing tests, maturity markers
+#   Lab 2 (Lesson 3): the missing tests and maturity markers here; source freshness goes in
+#                     models/staging/_merlinco_sources.yml
 #   Lab 3 (Lesson 4): config.meta owner, groups, exposures
 #   Lab 4 (Lesson 5): config.access + contracts
 #

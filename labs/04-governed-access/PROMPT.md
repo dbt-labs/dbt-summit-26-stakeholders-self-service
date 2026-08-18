@@ -14,7 +14,7 @@ You've made a model understandable (Lab 1), believable (Lab 2), and accountable 
 
    Then look at what you *didn't* mark. Every other model in the project is `protected`, which is dbt's default: referencable inside the project, not offered as a product. You didn't have to demote anything — `public` is the opt-in, and the line between "data product" and "implementation detail" is drawn by what you chose to promote.
 
-   `private` is the third option, and it's stricter than it sounds: it means "only nodes in the same group may `ref` this". Marking an intermediate model private drops the whole project's parse with `AccessDenied (dbt1066)` unless every downstream consumer joins its group — and on dbt Core that includes the tests that reference it. Worth understanding; not worth your 12 minutes. Stick to `public` and the default.
+   `private` is the third option, and it behaves in a way worth knowing before you reach for it. It means "only nodes in the same group may `ref` this" — so on its own, with no group, it does nothing at all: the project parses clean and anything can still reference the model. Pair it with a group and it bites hard: every *model* outside that group that `ref`s it fails the parse with `AccessDenied (dbt1066)`. Tests are exempt. Either way you get a surprise, so stick to `public` and the default today.
 
 2. **Enforce a contract** on the public mart so the columns stakeholders depend on can't silently change shape. `contract` nests under `config:` like everything else — top level is `dbt1060`.
 

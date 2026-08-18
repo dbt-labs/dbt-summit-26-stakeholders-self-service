@@ -25,7 +25,7 @@ The steps below are written for `fct_order_items`. Whichever model you documente
 
 1. **Freshness.** Add freshness to the `RAW_ORDERS` table on the `merlinco_apothecaries` source. Two things to know before you start: both keys go under `config:` (top level fails with `dbt1060`), and `ORDERED_AT` is stored as text, so `loaded_at_field` needs a cast.
 
-   Add these two keys to the **existing** `RAW_ORDERS` entry — don't paste a second `- name: RAW_ORDERS` list item, which dbt resolves by keeping the first definition and quietly discarding yours.
+   Add these two keys to the **existing** `RAW_ORDERS` entry — don't paste a second `- name: RAW_ORDERS` list item. dbt keeps the first definition and discards yours, and it says so only as a warning (`DuplicateSourceTable`, `dbt1155`), so the parse still looks green.
 
    ```yaml
            config:
@@ -38,19 +38,21 @@ The steps below are written for `fct_order_items`. Whichever model you documente
    Run `dbt source freshness`. **Expect it to fail.** The workshop dataset is static, so anything older than your `error_after` trips immediately — which is itself worth sitting with: a threshold that reflects the business reality of a 48-hour delay is *correct* and still red on this data. Thresholds describe the pipeline you want, not the one you have.
 
    Then think about what this check could tell you on a *live* pipeline, and what it couldn't. It reads `max(ORDERED_AT)` across the whole table, so in-store and courier-owl orders — which land immediately — would keep it green even while marketplace data sat two days behind. Freshness proves the table is loading. It does not prove the day is complete. That gap is exactly why Q3 in the question bank is a documentation problem and not a monitoring one.
-2. **Tests a stakeholder would care about.** Read what `fct_order_items` already has first — `unique` and `not_null` on the grain key, and a `relationships` test on `potion_sku`. Then add what's genuinely missing: `not_null` on `potion_sku`, and one test encoding a *business* assumption: `accepted_values` on `order_status`. The staging model asserts the four valid statuses; the mart a stakeholder actually reads asserts nothing, so a fifth status could appear tomorrow and every revenue filter written against these four would silently start dropping rows.
+2. **Tests a stakeholder would care about.** Read what `fct_order_items` already has first — `unique` and `not_null` on the grain key, and a `relationships` test on `potion_sku`. Then add what's genuinely missing: `not_null` on `potion_sku`, and one test encoding a *business* assumption: `accepted_values` on `order_status`.
+
+   Staging already pins those four values, so yes — this is a duplicate assertion, and that's the argument worth having. A fifth status turns the build red at staging either way. But a stakeholder browsing this mart in the catalog sees *this model's* tests, not the ones two layers upstream. Trust has to be visible where the thing is consumed, which is the whole premise of this lesson. Decide for yourself whether that's worth the duplication; it's a real trade-off, not a settled one.
 
    This project uses the `arguments:` form for test parameters. The shape you'll find in most dbt docs — `values:` directly under the test — is rejected here with `dbt1159`:
 
    ```yaml
-         data_tests:
-           - accepted_values:
-               arguments:
-                 values: ['completed', 'returned', 'cancelled', 'placed']
+           data_tests:
+             - accepted_values:
+                 arguments:
+                   values: ['completed', 'returned', 'cancelled', 'placed']
    ```
 
    Note what you *can't* express here. This project has no test packages installed, so the only generic tests available are `unique`, `not_null`, `accepted_values` and `relationships`. "Price is above zero" needs a singular test in a `.sql` file, which is off-limits today — worth knowing, because "we couldn't test the assumption" is itself something the docs then have to carry.
-3. **Mark it blessed.** Use `config.meta` and `config.tags` to mark maturity/certification, and set one other mart to `deprecated` with a description line naming what to use instead. Both `meta` and `tags` must sit under `config:` — at the top level of a model they're rejected as unexpected keys (`dbt1060`). You'll add more keys to this same `meta` block in Lab 3; extend it there rather than starting a second one, which errors with `DuplicateConfigKey (dbt1059)`.
+3. **Mark it blessed.** Use `config.meta` and `config.tags` to mark maturity/certification, and set one other mart to `deprecated` with a line naming what to use instead. For the four Lab 1 marts that line goes in the doc block in `_marts__docs.md` — their `description:` in the YAML is a `{{ doc(...) }}` reference now, and overwriting it with prose would break the wiring Lab 1 depends on. Both `meta` and `tags` must sit under `config:` — at the top level of a model they're rejected as unexpected keys (`dbt1060`). You'll add more keys to this same `meta` block in Lab 3; extend it there rather than starting a second one, which errors with `DuplicateConfigKey (dbt1059)`.
 4. Explore **lineage and model health in dbt Catalog** from the consumer's point of view. Not the developer's.
 
 For each signal, be ready to say in one sentence what it tells a non-technical consumer to *do differently*. A signal nobody can act on is decoration.

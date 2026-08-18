@@ -162,6 +162,11 @@ On 2026-08-14 every lab's YAML step was performed against this project on dbt-fu
 block with an owner, `config.group`, an exposure with `type`, `config.access: public` on the marts,
 and an enforced contract on `dim_shops` with `data_type` on all five columns.
 
+Every fenced snippet in `labs/` has also been extracted with its fence indentation stripped and
+pasted verbatim into the files the prompts name — all five parse clean. Worth re-running that check
+after any edit to a snippet, since an indentation slip in a paste-ready block is invisible on
+GitHub and fatal in the room.
+
 Read that as "the YAML is well-formed and the graph resolves", not as full coverage. Five things it
 does **not** cover, all of which need checking on the sandbox before the day:
 
