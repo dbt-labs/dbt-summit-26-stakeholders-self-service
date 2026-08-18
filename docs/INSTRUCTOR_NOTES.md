@@ -30,8 +30,11 @@ If it stays undecided, **record the flow anyway**. A recording costs an hour, co
 
 ## Lesson 2 debrief — the worked example
 
-Kept here rather than in `models/marts/_marts__docs.md`, because that is the file attendees edit in
-Lab 1. Put the answer key in there and you have handed out the answer before the exercise.
+Kept out of `models/marts/_marts__docs.md`, because that is the file attendees edit in Lab 1 — put
+the answer key in there and you have handed out the answer before the exercise. This is a partial
+control, not a real one: `docs/` is a directory attendees clone and Lab 1 links them into it twice.
+The actual fix is moving this file and `COURSE_OUTLINE.md` out of the repo, which is on the open
+items below.
 
 Two of the three caveats below are verifiable in the models — check them yourself before teaching
 them. The marketplace one is part of the business scenario, not something the models encode; say so
@@ -111,8 +114,8 @@ deciding what happens to the grain-key tests and the semantic layer.
 
 ## Fusion config nesting — brief the TAs on this
 
-`access`, `group`, `meta`, `tags`, `freshness` and `loaded_at_field` are all **rejected at the top
-level** by the engine in this project (dbt-fusion): `[error] [UnusedConfigKey (dbt1060)]: Ignored
+`access`, `group`, `meta`, `tags`, `contract`, `freshness` and `loaded_at_field` are all **rejected
+at the top level** by the engine in this project (dbt-fusion): `[error] [UnusedConfigKey (dbt1060)]: Ignored
 unexpected key "access"`. Every one of them must be nested under `config:`. Every dbt doc and blog
 post shows the top-level form, so expect this in **every lab from 2 onward** — Lab 2 step 1 is the
 first YAML edit of the day and it hits this immediately. Likely the single biggest source of raised
@@ -140,7 +143,8 @@ Two more engine behaviours worth having in your pocket:
 | Setup | Result on dbt-fusion 2.0.0-preview.205 |
 |---|---|
 | `access: private`, no group | Parses clean. Manifest shows `access = private, group = None`. Enforces nothing — anything can still `ref` it. |
-| `access: private` + a group | `[error] [AccessDenied (dbt1066)]` for every consumer outside that group. Parse fails. |
+| `access: private` + a group | `[error] [AccessDenied (dbt1066)]` for every **model** outside that group that `ref`s it. Parse fails. |
+| `access: private` + a group, on a **mart** | Parses clean. Tests are exempt from access enforcement, and no mart in this project is `ref`d by another model — so on the models attendees actually touch, this is silent too. |
 
 Both were reproduced directly. The failure mode with no group is silence, not an error, which is
 why Lab 4 steers attendees to `public` plus the default and treats `private` as discussion only.
@@ -168,6 +172,11 @@ does **not** cover, all of which need checking on the sandbox before the day:
   messiness". README setup step 5 now says some tests fail by design and that *you* will name which
   — so you have to actually name them. Run a full build on the sandbox, write down the expected
   failures, and brief the TAs, or the disclaimer just moves the confusion rather than removing it.
+- **No test packages are installed** (no `packages.yml`), so the only generic tests available are
+  `unique`, `not_null`, `accepted_values` and `relationships`. Anything numeric — "price above
+  zero", "quantity non-zero" — needs a singular test in a `.sql` file, which the labs forbid. Lab 2
+  step 2 was rewritten around `accepted_values` on `order_status` for this reason; if someone asks
+  for a numeric assertion, the honest answer is that it needs either a package or a singular test.
 - Plus:
 
 - **`dbt source freshness` will error**, not warn, on a static workshop dataset — the Lab 2 prompt
@@ -203,5 +212,9 @@ does **not** cover, all of which need checking on the sandbox before the day:
       needs an owner rather than just a checkbox.
 - [ ] Fix the region literal if any control answers are written against it — the data says
       `Northern Reaches`, and the docs said `Northern Reach` until 2026-08-14
+- [ ] **Verify the guild name literal in Q2.** Regions are pinned by `accepted_values`;
+      `guild_name` is not tested anywhere, so "Alchemists' Guild" is unverified. If the seeded value
+      differs, one of only three question-bank exercises returns nothing — the same failure the
+      region literal had.
 - [ ] Build the `solutions` branch with worked answers and control values for the question bank
 - [ ] Coordinate with the Semantic Layer and MCP lab teams so the spark demo complements rather than duplicates their sessions

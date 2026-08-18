@@ -1,7 +1,8 @@
 version: 2
 
 # Lab 2 (Lesson 3) adds source freshness here. Both `freshness` and `loaded_at_field` must be
-# nested under `config:` — at the table level they're rejected with dbt1060 — and ORDERED_AT is
+# nested under `config:` — at the table level they're rejected with dbt1060, as are access,
+# group, meta, tags and contract on models — and ORDERED_AT is
 # stored as text, so loaded_at_field needs a try_to_timestamp_ntz cast. Snippet in labs/02.
 
 sources:

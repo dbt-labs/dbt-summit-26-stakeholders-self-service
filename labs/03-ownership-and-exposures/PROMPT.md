@@ -16,7 +16,7 @@ Short and tightly scoped. The concept discussion carries this lesson; the build 
          name: Commerce Analytics
          email: commerce-analytics@merlinco.example
    ```
-3. **Add an exposure.** Define an `exposure` for the regional director's revenue dashboard, depending on your mart plus `dim_shops`. `type` and `owner` are both required — leaving `type` out fails with `missing field type` (`dbt1013`).
+3. **Add an exposure.** Define an `exposure` for the regional director's revenue dashboard in `models/marts/_merlinco_marts.yml`, depending on your mart plus `dim_shops`. `type` and `owner` are both required — leaving `type` out fails with `missing field type` (`dbt1013`). Swap `fct_order_items` below for whichever mart you documented in Lab 1; an exposure that doesn't name your model can't answer "who breaks if I change this?" about it.
 
    ```yaml
    exposures:

@@ -20,7 +20,7 @@ Take **one** mart model — `fct_order_items` is the richest, `dim_potions` the 
 ## Constraints
 
 - No SQL. If you're editing a `.sql` file, stop.
-- No dbt vocabulary in the "what is this" line — no "fact", "joined", "upstream".
+- No dbt vocabulary in the "what is this" line. The banned list is in [`docs/STAKEHOLDER_DOC_PATTERNS.md`](../../docs/STAKEHOLDER_DOC_PATTERNS.md): table, model, fact, joined, upstream.
 - The watch-out-for section must name at least one thing that would produce a **wrong but believable** number.
 - Don't add ownership metadata — `config.meta` owner, groups, exposures — yet. That's Lab 3.
 

@@ -23,7 +23,7 @@ So the docs you write in Lab 1 are not documentation in the old sense. They're t
 
 ## 1. What is this?
 
-One sentence, business language, no warehouse vocabulary. If it contains "table", "model", or "joined", rewrite it.
+One sentence, business language, no warehouse vocabulary. If it contains "table", "model", "fact", "joined", or "upstream", rewrite it. That's the list the labs use.
 
 > ❌ "Fact table joining order items to potions and shops."
 > ✅ "Every potion sold, one row per line on a customer's order."
