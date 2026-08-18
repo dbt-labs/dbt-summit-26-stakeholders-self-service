@@ -91,7 +91,7 @@ Trusted self-service stands on five things. The first three make a data product 
 - Expanding consumption without exposing developer workflows: model access (`public` / `private` / `protected`), groups, and contracts as guardrails
 - The governed answer surface: dbt Catalog for discovery, the Semantic Layer for consistent metrics, dbt Copilot / the dbt MCP server for natural-language asks from the tools stakeholders already use
 - Why this *is* control, not the loss of it: the guardrails do the gatekeeping
-- **Lab:** Set model access and a contract to expose a curated "public" interface while keeping work-in-progress models private—then see your documented, tested, owned model show up as a trusted, answerable product (closing the loop back to the Lesson 1 spark).
+- **Lab:** Set model access and a contract to expose a curated "public" interface, with everything else left at dbt's `protected` default—then see your documented, tested, owned model show up as a trusted, answerable product (closing the loop back to the Lesson 1 spark). (`private` is discussed but not set; it needs a group, and a private model with consumers outside that group stops the project parsing.)
 
 ### Lesson 6: Recreate the moment + next steps (6 mins) — [Concept]
 *Story beat: hand them the checklist · Maps to all outcomes*

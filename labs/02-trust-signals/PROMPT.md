@@ -12,12 +12,13 @@ Trust is a product feature, and it has to be visible at the point of consumption
 
 Make the model you documented in Lab 1 legible to a skeptical stakeholder.
 
-Steps 1 and 2 are written for `fct_order_items`. If you documented `dim_potions` instead, put the freshness block on `RAW_POTIONS` rather than `RAW_ORDERS` — `RAW_ORDERS` isn't upstream of your model — and for step 2 note that `dim_potions` already has `unique` and `not_null` on `potion_sku`, so go straight to the business-assumption test.
+Steps 1 and 2 are written for `fct_order_items`. If you documented `dim_potions` instead: `RAW_ORDERS` isn't upstream of your model, so put the freshness block on `RAW_POTIONS` and cast its timestamp instead — `try_to_timestamp_ntz(INTRODUCED_AT)`, since `RAW_POTIONS` has no `ORDERED_AT`. For step 2, `dim_potions` already has `unique` and `not_null` on `potion_sku`, so go straight to the business-assumption test and write it against `base_price_gold` or `recipe_unit_cost_gold` rather than the `unit_price_gold` named below, which lives on `fct_order_items`.
 
 1. **Freshness.** Add freshness to the `RAW_ORDERS` table on the `merlinco_apothecaries` source. Two things to know before you start: both keys go under `config:` (top level fails with `dbt1060`), and `ORDERED_AT` is stored as text, so `loaded_at_field` needs a cast.
 
+   Add these two keys to the **existing** `RAW_ORDERS` entry — don't paste a second `- name: RAW_ORDERS` list item, which dbt resolves by keeping the first definition and quietly discarding yours.
+
    ```yaml
-         - name: RAW_ORDERS
            config:
              loaded_at_field: try_to_timestamp_ntz(ORDERED_AT)
              freshness:

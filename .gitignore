@@ -5,5 +5,6 @@ dbt_packages/
 .env
 dbt_internal_packages/
 
-# Working archive of the original course scaffold; contains the Lab 1 answer key.
+# Working archive of the original course scaffold. Superseded by the files in docs/ and labs/,
+# and it still carries the Lab 1 worked example in an attendee-editable path.
 stakeholders-self-service-scaffold.zip

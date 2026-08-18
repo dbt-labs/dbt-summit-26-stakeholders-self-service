@@ -135,9 +135,17 @@ Two more engine behaviours worth having in your pocket:
         owner: commerce-analytics
 ```
 
-Note also that `access: private` without a group is a parse-time error in dbt Core but is **not**
-enforced by Fusion preview — so Lab 4 step 1's failure mode depends on which engine the workshop
-accounts run. Worth pinning down.
+**`access: private` semantics, tested on 2026-08-14 and worth not re-litigating:**
+
+| Setup | Result on dbt-fusion 2.0.0-preview.205 |
+|---|---|
+| `access: private`, no group | Parses clean. Manifest shows `access = private, group = None`. Enforces nothing — anything can still `ref` it. |
+| `access: private` + a group | `[error] [AccessDenied (dbt1066)]` for every consumer outside that group. Parse fails. |
+
+Both were reproduced directly. The failure mode with no group is silence, not an error, which is
+why Lab 4 steers attendees to `public` plus the default and treats `private` as discussion only.
+Note the no-group case *is* an error on dbt Core, so if the workshop accounts turn out to run Core
+rather than Fusion, re-check this before the day.
 
 ## Verified end to end
 
@@ -155,11 +163,11 @@ does **not** cover, all of which need checking on the sandbox before the day:
   dbt_cloud.yml config`, because the `dbt-cloud:` block in `dbt_project.yml` is commented out. So
   the interaction between Lab 4's access changes and the semantic models and metrics — the exact
   surface an L1/L5 spark demo queries — has not been observed at all.
-- **A green `dbt build` is the gate for starting Lab 1** (README setup step 5, "flag a TA
-  immediately"), and nothing has confirmed the workshop dataset passes the five singular tests and
-  the `accepted_values` tests the project already ships. Lab 2 also tells attendees the data
-  "carries deliberate messiness". Run a full build on the sandbox and find out which tests fail by
-  design, or 120 people escalate at minute nine over expected behaviour.
+- **Nobody has run `dbt build` against the workshop data.** The project ships five singular tests
+  plus the `accepted_values` tests, and Lab 2 tells attendees the data "carries deliberate
+  messiness". README setup step 5 now says some tests fail by design and that *you* will name which
+  — so you have to actually name them. Run a full build on the sandbox, write down the expected
+  failures, and brief the TAs, or the disclaimer just moves the confusion rather than removing it.
 - Plus:
 
 - **`dbt source freshness` will error**, not warn, on a static workshop dataset — the Lab 2 prompt
@@ -189,8 +197,10 @@ does **not** cover, all of which need checking on the sandbox before the day:
 - [ ] **`.mcp.json` was removed** — it pointed at a personal account host (`tk626.us1.dbt.com`)
       inherited from the seed project, while attendees are sent to `workshops.us1.dbt.com`. Editors
       auto-discover that file on repo open, so 120 people would have had a server aimed at the wrong
-      account. Re-add it with the real workshop MCP endpoint if the labs need it; `git show
-      main:.mcp.json` has the original — not `HEAD~1`, which stops resolving after the next commit.
+      account. Re-add it with the real workshop MCP endpoint if the labs need it. The original is at
+      `git show 59b8c84:.mcp.json` — pin the SHA, since both `HEAD~1` and `main` stop resolving once
+      this branch merges. Four documents still reference the MCP server for the L5 demo, so this
+      needs an owner rather than just a checkbox.
 - [ ] Fix the region literal if any control answers are written against it — the data says
       `Northern Reaches`, and the docs said `Northern Reach` until 2026-08-14
 - [ ] Build the `solutions` branch with worked answers and control values for the question bank

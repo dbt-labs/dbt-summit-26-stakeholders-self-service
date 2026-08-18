@@ -18,7 +18,7 @@ Used in Lab 1 (Lesson 2) and Lab 2 (Lesson 3). TAs: control answers are on the `
 
 > "How many customers do we have in the Alchemists' Guild, and what's their average order value?"
 
-*Hidden trap:* a customer can hold several guild memberships, and memberships are effective-dated with `valid_from` / `valid_to`. Naively joining memberships to orders fans out the rows and inflates both the customer count and the revenue. "Average order value" is also undefined — average per order, or per customer?
+*Hidden trap:* a customer can hold several guild memberships, and memberships are effective-dated with `valid_from` / `valid_to`. Naively joining memberships to orders fans out the rows and inflates both the customer count and the revenue. "Average order value" is also ambiguous — average per order, or per customer? Note the project already ships an `average_order_value` metric defined per order, so the interesting question isn't whether a definition exists but whether the stakeholder knows which one they're getting, and where they'd find out.
 
 ---
 
