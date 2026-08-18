@@ -38,12 +38,6 @@ missing artifact rather than a missing answer — which is why adding another an
 > **09:40 — finance lead**
 > "The revenue tile on the exec dashboard is down 30% from Friday. Did something change on your end?"
 
-Suggested reading: the first is *answerable* and reveals a docs gap (region exists on both the shop
-and the customer). The second is *access*, and it asks for far more than the person needs — say yes
-and you own a governance problem in six months; say no without an alternative and they rebuild it in
-a spreadsheet. The third is the only genuine *new definition*. The fourth is a *trust incident*, and
-the reason nobody can answer it quickly is that the dashboard was never registered as an exposure.
-
 ## The four inbound request types
 
 Nearly every stakeholder request is one of four things. Naming them is what lets you route instead of triage from scratch each time.

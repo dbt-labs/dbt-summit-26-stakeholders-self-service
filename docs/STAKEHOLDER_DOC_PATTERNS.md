@@ -48,6 +48,8 @@ The two or three things a well-meaning person would get wrong. Specific and conc
 
 > ✅ "Returned and cancelled orders are included at full line value — discounts are netted, order status isn't — so filter on `order_status` or you'll overstate revenue. Marketplace orders arrive up to 48 hours late, so the current day is always incomplete. Prices are carried in both copper and gold; gold is the reporting standard."
 
+One caution about that example: the 48-hour delay is part of the Merlinco business scenario, not something you can confirm from the models. The other two caveats you *can* check. Knowing which of your own caveats are which is the discipline being taught here.
+
 Check every caveat you write against the models before you publish it. A plausible but false warning is worse than no warning — it's the same wrong-but-believable failure this lesson exists to prevent, just authored by you.
 
 ---

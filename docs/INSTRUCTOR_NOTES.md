@@ -67,7 +67,7 @@ haven't checked.
 | Lab | Lesson | Time | Most likely stall |
 |---|---|---|---|
 | 1 Document | L2 | 15 | Perfectionism on column docs. Push them to 4–5 columns and move on. Watch for anyone writing lab notes *inside* a docs block — it all ships to the catalog. |
-| 2 Trust signals | L3 | 15 | `freshness` / `loaded_at_field` at the top level instead of under `config:` (`dbt1060`) — this is the first YAML edit of the day, so it lands hard. Then `dbt source freshness` erroring on static data reading as their mistake. The business-assumption test now points at `unit_price_gold`, which nothing in the project asserts today — steer people off `quantity`, which `no_negative_merlinco_amounts.sql` mostly covers. |
+| 2 Trust signals | L3 | 15 | `freshness` / `loaded_at_field` at the top level instead of under `config:` (`dbt1060`) — this is the first YAML edit of the day, so it lands hard. Then `dbt source freshness` erroring on static data reading as their mistake. The business-assumption test is `accepted_values` on `order_status` — and it needs the `arguments:` wrapper this project uses, not the shape in the dbt docs, which errors with `dbt1159`. |
 | 3 Ownership | L4 | 7 | Exposure YAML shape. Have the snippet ready to paste — this is guided, not discovery. |
 | 4 Access | L5 | 12 | Contracts require `data_type` on every column — and `fct_order_items` has 7 columns not yet in the YAML at all, so it's 16 entries to author, not 9. Point anyone short on time at `dim_shops` (5 columns). Step 1 is now `public` plus dbt's default `protected`; nobody should be setting `private`. If someone does and there's no group, it parses clean and enforces nothing — the trap is silence, not an error. |
 
@@ -125,6 +125,9 @@ Two more engine behaviours worth having in your pocket:
 
 - A second `meta:` key under one `config:` block is a hard error, not a silent overwrite:
   `[error] [DuplicateConfigKey (dbt1059)]`. Labs 2 and 3 both write into `meta`, so this will come up.
+- Test parameters need the `arguments:` wrapper. The stock docs form (`values:` directly under
+  `accepted_values:`) is rejected with `[error] [DbtYamlValidationError (dbt1159)]`. Every existing
+  test in the project already uses the wrapper, so "copy the shape next to you" is good advice.
 - `groups` require `owner`, and `exposures` require `type` — both surface as
   `[error] [SerializationError (dbt1013)]: YAML error: missing field ...`, which reads like a parser
   problem rather than a missing field. Paste-ready snippets for both are in the Lab 3 prompt.
@@ -159,7 +162,7 @@ On 2026-08-14 every lab's YAML step was performed against this project on dbt-fu
 block with an owner, `config.group`, an exposure with `type`, `config.access: public` on the marts,
 and an enforced contract on `dim_shops` with `data_type` on all five columns.
 
-Read that as "the YAML is well-formed and the graph resolves", not as full coverage. Three things it
+Read that as "the YAML is well-formed and the graph resolves", not as full coverage. Five things it
 does **not** cover, all of which need checking on the sandbox before the day:
 
 - **Semantic manifest validation is skipped in this project** — every parse emits
@@ -177,7 +180,6 @@ does **not** cover, all of which need checking on the sandbox before the day:
   zero", "quantity non-zero" — needs a singular test in a `.sql` file, which the labs forbid. Lab 2
   step 2 was rewritten around `accepted_values` on `order_status` for this reason; if someone asks
   for a numeric assertion, the honest answer is that it needs either a package or a singular test.
-- Plus:
 
 - **`dbt source freshness` will error**, not warn, on a static workshop dataset — the Lab 2 prompt
   now tells attendees to expect that and why. Confirm it's an error and not a hard build failure
@@ -199,6 +201,10 @@ does **not** cover, all of which need checking on the sandbox before the day:
       If a job run is needed, someone has to trigger it at each debrief. The local fallback in Lab 1
       doesn't help most of the room either: `dbt docs serve` binds a local port that attendees on
       the platform IDE can't reach. This is the last unresolved dependency shared by all four labs.
+- [ ] **Decide the repo's visibility before the session.** `TAKEAWAY_CHECKLIST.md` tells attendees
+      "This repo stays public after the event" and it's the page Lesson 6 says to screenshot; the
+      repo is private today. Either flip it or change the line — but flipping it publishes the
+      passcode and both planning docs, so these three decisions are one decision.
 - [ ] Decide whether the passcode stays in the README, and move **both** `INSTRUCTOR_NOTES.md` and
       `COURSE_OUTLINE.md` out of the attendee repo before it goes public. The outline carries
       milestone dates, the instructor split, PMM flags, and a footer naming a dropped presenter.
