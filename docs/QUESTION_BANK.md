@@ -6,7 +6,7 @@ Used in Lab 1 (Lesson 2) and Lab 2 (Lesson 3). TAs: control answers are on the `
 
 ---
 
-### Q1 — from the regional director, Northern Reach
+### Q1 — from the regional director, Northern Reaches
 
 > "Can you send me potion revenue by region for last quarter? I want to compare against the shop targets."
 

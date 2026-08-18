@@ -44,7 +44,7 @@ What one row means, as a sentence rather than a list of key columns. Highest-val
 
 The two or three things a well-meaning person would get wrong. Specific and concrete — vague warnings get ignored.
 
-> ✅ "Returned and cancelled orders are included at full line value and nothing is netted out, so filter on `order_status` or you'll overstate revenue. Marketplace orders arrive up to 48 hours late, so the current day is always incomplete. Prices are carried in both copper and gold; gold is the reporting standard."
+> ✅ "Returned and cancelled orders are included at full line value — discounts are netted, order status isn't — so filter on `order_status` or you'll overstate revenue. Marketplace orders arrive up to 48 hours late, so the current day is always incomplete. Prices are carried in both copper and gold; gold is the reporting standard."
 
 Check every caveat you write against the models before you publish it. A plausible but false warning is worse than no warning — it's the same wrong-but-believable failure this lesson exists to prevent, just authored by you.
 

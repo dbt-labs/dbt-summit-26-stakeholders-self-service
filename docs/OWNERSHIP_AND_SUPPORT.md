@@ -24,7 +24,7 @@ One row per data product that stakeholders are allowed to consume directly. If a
 Read these before the taxonomy below, and classify each one. Three of the four are symptoms of a
 missing artifact rather than a missing answer — which is why adding another analyst never fixes it.
 
-> **09:02 — regional director, Northern Reach**
+> **09:02 — regional director, Northern Reaches**
 > "Morning. Do we have potion revenue by region anywhere? I've been pulling it off the shop export,
 > but Marcus has a different number for the same quarter and neither of us can work out why."
 

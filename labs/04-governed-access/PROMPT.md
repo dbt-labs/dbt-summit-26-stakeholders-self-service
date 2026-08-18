@@ -14,7 +14,7 @@ You've made a model understandable (Lab 1), believable (Lab 2), and accountable 
 
    Resist doing this to an *intermediate* model, tempting as it is. `private` means "only nodes in the same group may `ref` it", so every mart downstream would have to join that group or the whole project stops parsing with `AccessDenied (dbt1066)`. Worth understanding; not worth your 12 minutes.
 2. **Enforce a contract** on the public mart so the columns stakeholders depend on can't silently change shape. A contract needs *every* column listed with a `data_type` — `fct_order_items` selects 16 and the YAML documents 9, so budget for the 7 you'll have to add. `dim_shops` is the smaller target if you're short on time. Then `dbt build` and watch it be enforced.
-3. **Break it on purpose.** Rename or retype a contracted column and run again. Read the error as if you were the consumer who'd have been broken silently. Then revert.
+3. **Break it on purpose.** Change a declared `data_type` in the contract to something the model doesn't actually produce — `region` as `number`, say — and run again. Read the error as if you were the consumer who'd have been broken silently, then revert. Do this in the YAML, not the `.sql`; the contract is the promise, and breaking the promise is enough to see it enforced.
 4. **Close the loop.** Find your model in **dbt Catalog** as a stakeholder would: documented, tested, fresh, owned, certified, public, contracted. This is the product behind the answer you saw in the opening demo.
 
 ## The distinction worth internalizing

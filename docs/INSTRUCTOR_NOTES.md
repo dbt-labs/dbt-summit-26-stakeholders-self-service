@@ -64,7 +64,7 @@ haven't checked.
 | Lab | Lesson | Time | Most likely stall |
 |---|---|---|---|
 | 1 Document | L2 | 15 | Perfectionism on column docs. Push them to 4–5 columns and move on. Watch for anyone writing lab notes *inside* a docs block — it all ships to the catalog. |
-| 2 Trust signals | L3 | 15 | YAML indentation on `freshness`; the intentional test failure reading as their mistake. |
+| 2 Trust signals | L3 | 15 | `freshness` / `loaded_at_field` at the top level instead of under `config:` (`dbt1060`) — this is the first YAML edit of the day, so it lands hard. Then `dbt source freshness` erroring on static data reading as their mistake. |
 | 3 Ownership | L4 | 7 | Exposure YAML shape. Have the snippet ready to paste — this is guided, not discovery. |
 | 4 Access | L5 | 12 | Contracts require `data_type` on every column — and `fct_order_items` has 7 columns not yet in the YAML at all, so it's 16 entries to author, not 9. Point anyone short on time at `dim_shops`. |
 
@@ -111,12 +111,20 @@ deciding what happens to the grain-key tests and the semantic layer.
 
 ## Fusion config nesting — brief the TAs on this
 
-`access`, `group` and `meta` are **rejected at the top level of a model** by the engine in this
-project (dbt-fusion): `[error] [UnusedConfigKey (dbt1060)]: Ignored unexpected key "access"`. They
-must be nested under `config:`. Every dbt doc and blog post shows the top-level form, so expect
-this in Lab 3 step 1, Lab 3 step 2, and Lab 4 step 1 — likely the single biggest source of raised
-hands in the back half. The prompts now say so, but attendees pattern-match to docs they already
-know.
+`access`, `group`, `meta`, `tags`, `freshness` and `loaded_at_field` are all **rejected at the top
+level** by the engine in this project (dbt-fusion): `[error] [UnusedConfigKey (dbt1060)]: Ignored
+unexpected key "access"`. Every one of them must be nested under `config:`. Every dbt doc and blog
+post shows the top-level form, so expect this in **every lab from 2 onward** — Lab 2 step 1 is the
+first YAML edit of the day and it hits this immediately. Likely the single biggest source of raised
+hands all session. The prompts now say so inline, but attendees pattern-match to docs they know.
+
+Two more engine behaviours worth having in your pocket:
+
+- A second `meta:` key under one `config:` block is a hard error, not a silent overwrite:
+  `[error] [DuplicateConfigKey (dbt1059)]`. Labs 2 and 3 both write into `meta`, so this will come up.
+- `groups` require `owner`, and `exposures` require `type` — both surface as
+  `[error] [SerializationError (dbt1013)]: YAML error: missing field ...`, which reads like a parser
+  problem rather than a missing field. Paste-ready snippets for both are in the Lab 3 prompt.
 
 ```yaml
   - name: dim_potions
@@ -131,6 +139,24 @@ Note also that `access: private` without a group is a parse-time error in dbt Co
 enforced by Fusion preview — so Lab 4 step 1's failure mode depends on which engine the workshop
 accounts run. Worth pinning down.
 
+## Verified end to end
+
+On 2026-08-14 every lab's YAML step was performed against this project on dbt-fusion
+2.0.0-preview.205 and the result parses clean: config-nested source freshness with the
+`try_to_timestamp_ntz` cast, `not_null` on `potion_sku`, `config.tags` + `config.meta`, a `groups:`
+block with an owner, `config.group`, an exposure with `type`, `config.access` public on the marts
+and private on `fct_customer_guild_memberships`, and an enforced contract on `dim_shops` with
+`data_type` on all five columns.
+
+Two things could not be checked without warehouse access, so check them on the sandbox before the
+day:
+
+- **`dbt source freshness` will error**, not warn, on a static workshop dataset — the Lab 2 prompt
+  now tells attendees to expect that and why. Confirm it's an error and not a hard build failure
+  that blocks Labs 3 and 4, since `source` is a selectable resource type for `dbt build`.
+- **Lab 4 step 3's contract break** is a `data_type` mismatch, which surfaces at build rather than
+  parse. Confirm the error message is legible to an attendee.
+
 ## Open items
 
 - [ ] Confirm Semantic Layer + Copilot availability in workshop accounts (blocks L1 and L5)
@@ -143,7 +169,16 @@ accounts run. Worth pinning down.
 - [ ] Confirm how attendee edits reach **dbt Catalog** — every lab ends with "see it in Catalog",
       but Catalog is built from job-run artifacts and setup only has attendees run `dbt build` once.
       If a job run is needed, someone has to trigger it at each debrief.
-- [ ] Decide whether the passcode stays in the README, and move `INSTRUCTOR_NOTES.md` out of the
-      attendee repo, before it goes public
+- [ ] Decide whether the passcode stays in the README, and move **both** `INSTRUCTOR_NOTES.md` and
+      `COURSE_OUTLINE.md` out of the attendee repo before it goes public. The outline carries
+      milestone dates, the instructor split, PMM flags, and a footer naming a dropped presenter.
+      This file is also linked from the README's attendee-facing reference list — unlink it.
+- [ ] **`.mcp.json` points at a personal account host** (`tk626.us1.dbt.com`), inherited from the
+      project this repo was seeded from, while attendees are sent to `workshops.us1.dbt.com`. Anyone
+      opening the repo in an MCP-aware client gets a server aimed at the wrong account. Needs the
+      real workshop MCP endpoint, or the file removed. Left as-is because guessing the URL is worse
+      than flagging it.
+- [ ] Fix the region literal if any control answers are written against it — the data says
+      `Northern Reaches`, and the docs said `Northern Reach` until 2026-08-14
 - [ ] Build the `solutions` branch with worked answers and control values for the question bank
 - [ ] Coordinate with the Semantic Layer and MCP lab teams so the spark demo complements rather than duplicates their sessions

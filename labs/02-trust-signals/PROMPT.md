@@ -14,11 +14,22 @@ Make the model you documented in Lab 1 legible to a skeptical stakeholder.
 
 Steps 1 and 2 are written for `fct_order_items`. If you documented `dim_potions` instead, step 1 is unchanged — freshness lives on the source, not on your model — and for step 2 your model already has `unique` and `not_null` on `potion_sku`, so go straight to the business-assumption test.
 
-1. **Freshness.** Add a `freshness` block to the `RAW_ORDERS` table on the `merlinco_apothecaries` source, with `warn_after` and `error_after` reflecting the 48-hour marketplace delay. `ORDERED_AT` is stored as text, so `loaded_at_field` needs a cast — `try_to_timestamp_ntz(ORDERED_AT)`. Run `dbt source freshness`.
+1. **Freshness.** Add freshness to the `RAW_ORDERS` table on the `merlinco_apothecaries` source. Two things to know before you start: both keys go under `config:` (top level fails with `dbt1060`), and `ORDERED_AT` is stored as text, so `loaded_at_field` needs a cast.
+
+   ```yaml
+         - name: RAW_ORDERS
+           config:
+             loaded_at_field: try_to_timestamp_ntz(ORDERED_AT)
+             freshness:
+               warn_after: {count: 24, period: hour}
+               error_after: {count: 48, period: hour}
+   ```
+
+   Run `dbt source freshness`. **Expect it to fail.** The workshop dataset is static, so anything older than your `error_after` trips immediately — which is itself worth sitting with: a threshold that reflects the business reality of a 48-hour delay is *correct* and still red on this data. Thresholds describe the pipeline you want, not the one you have.
 
    Then notice what this check *can't* tell you: it reads `max(ORDERED_AT)` across the whole table, and in-store and courier-owl orders keep that current even while marketplace data is two days behind. Freshness proves the table is loading. It does not prove the day is complete. That gap is exactly why Q3 in the question bank is a documentation problem and not a monitoring one.
 2. **Tests a stakeholder would care about.** Read what `fct_order_items` already has first — `unique` and `not_null` on the grain key, and a `relationships` test on `potion_sku`. Then add what's genuinely missing: `not_null` on `potion_sku`, and one test encoding a *business* assumption, such as quantity never being zero. Check `tests/singular/` before writing one; several assumptions are already covered there.
-3. **Mark it blessed.** Use `config.meta` and tags to mark maturity/certification, and set one other mart to `deprecated` with a description line naming what to use instead. Mind the nesting: `meta` at the top level of a model is rejected as an unexpected key (`dbt1060`). You'll add more keys to this same `meta` block in Lab 3 — extend it there rather than starting a second one, since a duplicate `meta:` silently wins and drops what you set here.
+3. **Mark it blessed.** Use `config.meta` and `config.tags` to mark maturity/certification, and set one other mart to `deprecated` with a description line naming what to use instead. Both `meta` and `tags` must sit under `config:` — at the top level of a model they're rejected as unexpected keys (`dbt1060`). You'll add more keys to this same `meta` block in Lab 3; extend it there rather than starting a second one, which errors with `DuplicateConfigKey (dbt1059)`.
 4. Explore **lineage and model health in dbt Catalog** from the consumer's point of view. Not the developer's.
 
 For each signal, be ready to say in one sentence what it tells a non-technical consumer to *do differently*. A signal nobody can act on is decoration.

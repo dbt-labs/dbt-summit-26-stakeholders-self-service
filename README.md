@@ -63,4 +63,3 @@ Hands-on: 49 of 90 minutes. Each lab has a `PROMPT.md` with the task, constraint
 - [`docs/QUESTION_BANK.md`](docs/QUESTION_BANK.md) — the stakeholder questions your docs have to survive (L2, L3)
 - [`docs/OWNERSHIP_AND_SUPPORT.md`](docs/OWNERSHIP_AND_SUPPORT.md) — ownership register and request routing (L4)
 - [`docs/TAKEAWAY_CHECKLIST.md`](docs/TAKEAWAY_CHECKLIST.md) — what to run on your own project Monday (L6)
-- [`docs/INSTRUCTOR_NOTES.md`](docs/INSTRUCTOR_NOTES.md) — instructor and TA reference; not needed by attendees
