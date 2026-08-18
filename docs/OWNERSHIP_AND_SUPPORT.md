@@ -1,6 +1,6 @@
 # Ownership and support workflow
 
-Documentation answers questions that have already been asked well. Ownership handles everything else. This is the template you'll fill in during Lab 3 (Lesson 4) — and the artifact most worth taking home.
+Documentation answers questions that have already been asked well. Ownership handles everything else. Lab 3 makes ownership real in the project; this page is the take-home version — fill the register in for your own marts on Monday. It's the artifact most worth leaving with.
 
 ## Ownership register
 

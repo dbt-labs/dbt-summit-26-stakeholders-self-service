@@ -9,7 +9,9 @@ version: 2
 #   Lab 3 (Lesson 4): config.meta owner, groups, exposures
 #   Lab 4 (Lesson 5): config.access + contracts
 #
-# access, group and meta must be nested under `config:` — see labs/03 and labs/04.
+# access, group, meta and tags must all be nested under `config:` — top level is rejected with
+# dbt1060. Same applies to freshness and loaded_at_field in _merlinco_sources.yml (Lab 2 step 1,
+# the first YAML edit of the day). See labs/02, labs/03 and labs/04.
 
 models:
   - name: dim_customers

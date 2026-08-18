@@ -66,7 +66,7 @@ haven't checked.
 | 1 Document | L2 | 15 | Perfectionism on column docs. Push them to 4–5 columns and move on. Watch for anyone writing lab notes *inside* a docs block — it all ships to the catalog. |
 | 2 Trust signals | L3 | 15 | `freshness` / `loaded_at_field` at the top level instead of under `config:` (`dbt1060`) — this is the first YAML edit of the day, so it lands hard. Then `dbt source freshness` erroring on static data reading as their mistake. |
 | 3 Ownership | L4 | 7 | Exposure YAML shape. Have the snippet ready to paste — this is guided, not discovery. |
-| 4 Access | L5 | 12 | Contracts require `data_type` on every column — and `fct_order_items` has 7 columns not yet in the YAML at all, so it's 16 entries to author, not 9. Point anyone short on time at `dim_shops`. |
+| 4 Access | L5 | 12 | Contracts require `data_type` on every column — and `fct_order_items` has 7 columns not yet in the YAML at all, so it's 16 entries to author, not 9. Point anyone short on time at `dim_shops` (5 columns). Step 1 is now `public` plus dbt's default `protected`; nobody should be setting `private`, and if they do, expect dbt1066. |
 
 At 120 people, assume the slowest table is 6–8 minutes behind. Each lab is written so partial completion still lands the point.
 
@@ -142,14 +142,25 @@ accounts run. Worth pinning down.
 ## Verified end to end
 
 On 2026-08-14 every lab's YAML step was performed against this project on dbt-fusion
-2.0.0-preview.205 and the result parses clean: config-nested source freshness with the
+2.0.0-preview.205 and `dbt parse` came back clean: config-nested source freshness with the
 `try_to_timestamp_ntz` cast, `not_null` on `potion_sku`, `config.tags` + `config.meta`, a `groups:`
-block with an owner, `config.group`, an exposure with `type`, `config.access` public on the marts
-and private on `fct_customer_guild_memberships`, and an enforced contract on `dim_shops` with
-`data_type` on all five columns.
+block with an owner, `config.group`, an exposure with `type`, `config.access: public` on the marts,
+and an enforced contract on `dim_shops` with `data_type` on all five columns.
 
-Two things could not be checked without warehouse access, so check them on the sandbox before the
-day:
+Read that as "the YAML is well-formed and the graph resolves", not as full coverage. Three things it
+does **not** cover, all of which need checking on the sandbox before the day:
+
+- **Semantic manifest validation is skipped in this project** — every parse emits
+  `[warning] [InvalidConfig (dbt1005)]: Skipping semantic manifest validation due to: No
+  dbt_cloud.yml config`, because the `dbt-cloud:` block in `dbt_project.yml` is commented out. So
+  the interaction between Lab 4's access changes and the semantic models and metrics — the exact
+  surface an L1/L5 spark demo queries — has not been observed at all.
+- **A green `dbt build` is the gate for starting Lab 1** (README setup step 5, "flag a TA
+  immediately"), and nothing has confirmed the workshop dataset passes the five singular tests and
+  the `accepted_values` tests the project already ships. Lab 2 also tells attendees the data
+  "carries deliberate messiness". Run a full build on the sandbox and find out which tests fail by
+  design, or 120 people escalate at minute nine over expected behaviour.
+- Plus:
 
 - **`dbt source freshness` will error**, not warn, on a static workshop dataset — the Lab 2 prompt
   now tells attendees to expect that and why. Confirm it's an error and not a hard build failure
@@ -172,12 +183,12 @@ day:
 - [ ] Decide whether the passcode stays in the README, and move **both** `INSTRUCTOR_NOTES.md` and
       `COURSE_OUTLINE.md` out of the attendee repo before it goes public. The outline carries
       milestone dates, the instructor split, PMM flags, and a footer naming a dropped presenter.
-      This file is also linked from the README's attendee-facing reference list — unlink it.
-- [ ] **`.mcp.json` points at a personal account host** (`tk626.us1.dbt.com`), inherited from the
-      project this repo was seeded from, while attendees are sent to `workshops.us1.dbt.com`. Anyone
-      opening the repo in an MCP-aware client gets a server aimed at the wrong account. Needs the
-      real workshop MCP endpoint, or the file removed. Left as-is because guessing the URL is worse
-      than flagging it.
+      Neither is linked from the README any more, but both sit in a repo attendees clone.
+- [ ] **`.mcp.json` was removed** — it pointed at a personal account host (`tk626.us1.dbt.com`)
+      inherited from the seed project, while attendees are sent to `workshops.us1.dbt.com`. Editors
+      auto-discover that file on repo open, so 120 people would have had a server aimed at the wrong
+      account. Re-add it with the real workshop MCP endpoint if the labs need it; `git show
+      HEAD~1:.mcp.json` has the original.
 - [ ] Fix the region literal if any control answers are written against it — the data says
       `Northern Reaches`, and the docs said `Northern Reach` until 2026-08-14
 - [ ] Build the `solutions` branch with worked answers and control values for the question bank

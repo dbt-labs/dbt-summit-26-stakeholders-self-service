@@ -66,7 +66,7 @@ Trusted self-service stands on five things. The first three make a data product 
 
 - The four questions every stakeholder (and every AI assistant) asks: *What is this? When should I use it? What's the grain? What should I watch out for?*
 - Why good docs are now double-duty: they brief humans *and* power the answer surface (Copilot/Catalog can only describe what you've documented)
-- Patterns via `description` and `meta`; drafting a first pass with dbt Copilot
+- Patterns via `description` and doc blocks; drafting a first pass with dbt Copilot. Ownership metadata is deliberately held back to Lesson 4, so the lab makes the point that a data product can be perfectly described and still have nobody accountable for it
 - **Lab:** Document a mart model end to end—description, grain statement, intended-use and caveat notes, column-level descriptions—then view it in dbt Catalog as a stakeholder would.
 
 ### Lesson 3: Trust signals — why the answer is believable (18 mins) — [Concept 3 / Lab 15]
@@ -74,7 +74,7 @@ Trusted self-service stands on five things. The first three make a data product 
 
 - Signals that build confidence: data tests, source freshness, model health, certification/maturity markers
 - Surfacing trust in dbt Catalog so a consumer can see *why* to believe a number
-- Using `meta`, tags, and groups to mark "blessed"
+- Using `config.meta` and `config.tags` to mark "blessed" (groups are Lesson 4, with ownership)
 - **Lab:** Add tests and a freshness check, tag the model as certified, then explore lineage and health in dbt Catalog from the consumer's point of view.
 
 ### Lesson 4: Ownership & support — who stands behind it (14 mins) — [Concept 7 / Lab 7]
