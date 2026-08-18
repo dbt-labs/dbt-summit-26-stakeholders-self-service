@@ -13,9 +13,9 @@ Nothing is broken. The project simply isn't consumable by anyone who didn't buil
 Take **one** mart model — `fct_order_items` is the richest, `dim_potions` the fastest — and make it explain itself.
 
 1. Open [`docs/QUESTION_BANK.md`](../../docs/QUESTION_BANK.md). Try to answer one question using only what's documented today. Write down every point where you had to guess.
-2. Rewrite the model's doc block in `models/marts/_marts__docs.md` to answer the four questions from [`docs/STAKEHOLDER_DOC_PATTERNS.md`](../../docs/STAKEHOLDER_DOC_PATTERNS.md): what is this, when should I use it, what's the grain, what should I watch out for.
+2. Rewrite the model's doc block in `models/marts/_marts__docs.md` — the prose inside the block only; anything you put there ships to the catalog and to Copilot to answer the four questions from [`docs/STAKEHOLDER_DOC_PATTERNS.md`](../../docs/STAKEHOLDER_DOC_PATTERNS.md): what is this, when should I use it, what's the grain, what should I watch out for.
 3. Document the columns a stakeholder will actually touch — the ones that appear in a filter or a sum. Say what they *mean*, not what type they are. You do not need to document all of them.
-4. Run `dbt parse` to confirm the YAML is valid, then `dbt compile --write-catalog` (`dbt docs generate` is deprecated in Fusion). Read your own work in **dbt Catalog** the way a stakeholder would.
+4. Run `dbt parse` to confirm the YAML is valid. Then read your own work back the way a stakeholder would — your instructor will say whether that's **dbt Catalog** in the platform, which refreshes on a job run rather than on your local edits, or the local docs site (`dbt compile --write-catalog`, then `dbt docs serve`; `dbt docs generate` is deprecated in Fusion).
 
 ## Constraints
 

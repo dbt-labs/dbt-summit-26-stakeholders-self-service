@@ -42,7 +42,7 @@ Layers: `models/staging/` (views) → `models/intermediate/` (views) → `models
 4. Your account initializes from this repo — a personal target schema in `ANALYTICS_WIZARD`, read access to the `RAW_WIZARD.MERLINCO_APOTHECARIES` source
 5. Run `dbt build` once and confirm it succeeds. **Do this before Lab 1.** If it fails, flag a TA immediately.
 
-Prefer local? Copy `profiles.yml.example` to `~/.dbt/profiles.yml`, then replace the `{snowflake-user}` and `{PAT}` placeholders with your own — left as-is they parse as YAML mappings, not strings, and the error you get won't look like a credentials problem. The platform IDE is the supported path today.
+Prefer local? Copy `profiles.yml.example` to `~/.dbt/profiles.yml`, then replace all three placeholders — `{snowflake-user}`, `{PAT}`, and the `{flastname}` in `schema: dbt_{flastname}` — left as-is, the first two parse as YAML mappings rather than strings and throw an error that won't look like a credentials problem, while the third silently builds every model into a schema literally named `dbt_{flastname}`. The platform IDE is the supported path today.
 
 ## The 90 minutes
 

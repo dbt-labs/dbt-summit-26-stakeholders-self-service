@@ -28,11 +28,42 @@ If it stays undecided, **record the flow anyway**. A recording costs an hour, co
 
 **Suggested question for the demo:** something with a real trap in it, ideally one from `docs/QUESTION_BANK.md`. An assistant handling the guild fan-out correctly *because the grain was documented* is a far better spark than a clean aggregate any BI tool could produce.
 
+## Lesson 2 debrief — the worked example
+
+Kept here rather than in `models/marts/_marts__docs.md`, because that is the file attendees edit in
+Lab 1. Put the answer key in there and you have handed out the answer before the exercise.
+
+Two of the three caveats below are verifiable in the models — check them yourself before teaching
+them. The marketplace one is part of the business scenario, not something the models encode; say so
+if a sharp attendee asks, because the whole point of the lesson is not publishing caveats you
+haven't checked.
+
+> Every potion sold, one row per line on a customer's order.
+>
+> **Use this for** revenue and unit-volume reporting by shop, region, potion, and channel.
+> **Do not use this for** inventory on hand — brewing is not netted against sales here; use
+> `fct_brew_events`.
+>
+> **Grain:** one row per order line. An order containing three different potions appears as three
+> rows. Summing revenue across orders is safe; summing it after joining to guild memberships is
+> not, because a customer can hold more than one membership at a time.
+>
+> **Watch out for:**
+>
+> - Returned and cancelled orders are included at full line value. Discounts *are* netted
+>   (`line_net_gold = line_gross_gold - allocated_discount_gold`), but order status is not — filter
+>   on `order_status` or you will overstate revenue. *(Verifiable: `fct_order_items.sql` applies no
+>   status filter; accepted values are in `_merlinco_staging.yml`.)*
+> - Marketplace orders arrive up to 48 hours late, so the current day is always incomplete.
+>   *(Scenario, not encoded in the models.)*
+> - Prices are carried in both copper and gold. Gold is the reporting standard; copper is retained
+>   for reconciliation against the POS system. *(Verifiable: both columns exist on the mart.)*
+
 ## Lab timing and failure modes
 
 | Lab | Lesson | Time | Most likely stall |
 |---|---|---|---|
-| 1 Document | L2 | 15 | Perfectionism on column docs. Push them to 4–5 columns and move on. |
+| 1 Document | L2 | 15 | Perfectionism on column docs. Push them to 4–5 columns and move on. Watch for anyone writing lab notes *inside* a docs block — it all ships to the catalog. |
 | 2 Trust signals | L3 | 15 | YAML indentation on `freshness`; the intentional test failure reading as their mistake. |
 | 3 Ownership | L4 | 7 | Exposure YAML shape. Have the snippet ready to paste — this is guided, not discovery. |
 | 4 Access | L5 | 12 | Contracts require `data_type` on every column — and `fct_order_items` has 7 columns not yet in the YAML at all, so it's 16 entries to author, not 9. Point anyone short on time at `dim_shops`. |
