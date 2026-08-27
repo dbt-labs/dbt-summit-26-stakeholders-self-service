@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "dbt": {
-      "type": "http",
-      "url": "https://tk626.us1.dbt.com/api/ai/v1/mcp"
-    }
-  }
-}

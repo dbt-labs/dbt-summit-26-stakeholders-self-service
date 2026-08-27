@@ -1,8 +1,22 @@
 version: 2
 
+# The four models wired to doc blocks in _marts__docs.md are the Lab 1 targets:
+# fct_order_items, dim_potions, dim_shops, dim_customers. Their descriptions are
+# deliberately developer-grade — accurate, and useless to a stakeholder.
+#
+#   Lab 1 (Lesson 2): rewrite those doc blocks + the column descriptions
+#   Lab 2 (Lesson 3): the missing tests and maturity markers here; source freshness goes in
+#                     models/staging/_merlinco_sources.yml
+#   Lab 3 (Lesson 4): config.meta owner, groups, exposures
+#   Lab 4 (Lesson 5): config.access + contracts
+#
+# access, group, meta, tags and contract must all be nested under `config:` — top level is rejected with
+# dbt1060. Same applies to freshness and loaded_at_field in _merlinco_sources.yml (Lab 2 step 1,
+# the first YAML edit of the day). See labs/02, labs/03 and labs/04.
+
 models:
   - name: dim_customers
-    description: Customer dimension at one row per customer.
+    description: '{{ doc("dim_customers") }}'
     semantic_model:
       enabled: true
     agg_time_dimension: signed_up_at
@@ -34,7 +48,7 @@ models:
         dimension:
           type: categorical
   - name: dim_potions
-    description: Potion dimension at one row per potion SKU.
+    description: '{{ doc("dim_potions") }}'
     semantic_model:
       enabled: true
     columns:
@@ -59,7 +73,7 @@ models:
         dimension:
           type: categorical
   - name: dim_shops
-    description: Shop dimension at one row per shop.
+    description: '{{ doc("dim_shops") }}'
     semantic_model:
       enabled: true
     agg_time_dimension: opened_at
@@ -239,7 +253,7 @@ models:
         dimension:
           type: categorical
   - name: fct_order_items
-    description: Order item fact at one row per order line with allocated order discounts.
+    description: '{{ doc("fct_order_items") }}'
     semantic_model:
       enabled: true
     agg_time_dimension: ordered_at
