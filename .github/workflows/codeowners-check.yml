@@ -8,8 +8,13 @@ on:
 
 jobs:
   validate-codeowners:
-    if: github.actor != 'dependabot[bot]'
-    runs-on: depot-ubuntu-24.04
+    # Gate the secrets-using job to same-repo PRs. On a public repo, fork PRs receive no
+    # secrets, so the INPUT_GITHUB_APP_* values would arrive empty and fail confusingly.
+    if: >-
+      github.actor != 'dependabot[bot]'
+      && (github.event_name != 'pull_request'
+          || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # actions/checkout@v6
       - uses: mszostok/codeowners-validator@7f3f5e28c6d7b8dfae5731e54ce2272ca384592f #v0.7.4
