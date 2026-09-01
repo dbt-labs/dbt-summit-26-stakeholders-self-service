@@ -1,13 +1,29 @@
+# Copy to ~/.dbt/profiles.yml and replace every {placeholder} below.
+#
+# Attendees: you do not need this file. The workshop IDE is the supported path and is already
+# configured. Use this only if you are running the project against your own Snowflake account,
+# during the session or after it.
+#
+# Every {placeholder} below is yours to fill in. They are quoted, so leaving one as-is fails
+# authentication with the literal placeholder text rather than throwing a YAML parse error --
+# except `schema`, which is noted inline below.
+
 merlin-co:
   target: dev
   outputs:
     dev:
       type: snowflake
       threads: 6
-      password: {PAT} # this SF account does not allow for MFA/SSO or password use; must use token
-      account: CMVGRNF-COALESCE_WORKSHOPS
-      user: {snowflake-user}
-      database: ANALYTICS_WIZARD
-      warehouse: TRANSFORMER_COALESCE
+      # Snowflake account identifier, e.g. ABCDEFG-MYACCOUNT. Find yours with:
+      #   SELECT CURRENT_ORGANIZATION_NAME() || '-' || CURRENT_ACCOUNT_NAME();
+      account: "{snowflake-account-identifier}"
+      user: "{snowflake-user}"
+      # Programmatic access token. If your account enforces MFA/SSO, password auth will not work
+      # and a token is required. Never commit this value.
+      password: "{PAT}"
+      database: "{target-database}"
+      warehouse: "{warehouse}"
+      role: "{role}"
+      # Your own dev schema, e.g. dbt_jdoe. Left as a literal placeholder, dbt silently builds
+      # every model into a schema named dbt_{flastname}.
       schema: dbt_{flastname}
-      role: TRANSFORMER
