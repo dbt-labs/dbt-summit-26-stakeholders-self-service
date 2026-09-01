@@ -38,11 +38,11 @@ Layers: `models/staging/` (views) → `models/intermediate/` (views) → `models
 
 1. Incognito window → **workshops.us1.dbt.com/workshop**
 2. Select **Scaling trusted self-service for dbt stakeholders**
-3. Passcode: `Summit2026!`
+3. Enter the passcode your instructor gives you at the start of the session
 4. Your account initializes from this repo — a personal target schema in `ANALYTICS_WIZARD`, read access to the `RAW_WIZARD.MERLINCO_APOTHECARIES` source
 5. Run `dbt build` once. **Do this before Lab 1.** Some tests fail on this dataset by design — your instructor will say which — so flag a TA if you see anything beyond those, or if the build doesn't complete.
 
-Prefer local? Copy `profiles.yml.example` to `~/.dbt/profiles.yml`, then replace all three placeholders — `{snowflake-user}`, `{PAT}`, and the `{flastname}` in `schema: dbt_{flastname}` — left as-is, the first two parse as YAML mappings rather than strings and throw an error that won't look like a credentials problem, while the third silently builds every model into a schema literally named `dbt_{flastname}`. The platform IDE is the supported path today.
+Prefer local? Copy `profiles.yml.example` to `~/.dbt/profiles.yml` and fill in every `{placeholder}` — your own Snowflake account, credentials, database, warehouse and role. Watch the last one: `schema: dbt_{flastname}` left as-is won't error, it will silently build every model into a schema literally named `dbt_{flastname}`. You'll also need your own copy of the source tables, since the workshop warehouse is only reachable during the session. The platform IDE is the supported path today.
 
 ## The 90 minutes
 
@@ -55,7 +55,7 @@ Prefer local? Copy `profiles.yml.example` to `~/.dbt/profiles.yml`, then replace
 | **L5** — Governed access & the answer surface | 22 min | 10 concept / **12 lab** → [`labs/04`](labs/04-governed-access/) |
 | **L6** — Recreate the moment + next steps | 6 min | Concept → [`docs/TAKEAWAY_CHECKLIST.md`](docs/TAKEAWAY_CHECKLIST.md) |
 
-Hands-on: 49 of 90 minutes. Each lab has a `PROMPT.md` with the task and a "done when" bar. Solutions live on the `solutions` branch — don't peek until your table has had a real go.
+Hands-on: 49 of 90 minutes. Each lab folder has a `prompt_*.md` with the task and a "done when" bar. Solutions live on the `solutions` branch — don't peek until your table has had a real go.
 
 ## Reference material
 
@@ -63,3 +63,22 @@ Hands-on: 49 of 90 minutes. Each lab has a `PROMPT.md` with the task and a "done
 - [`docs/QUESTION_BANK.md`](docs/QUESTION_BANK.md) — the stakeholder questions your docs have to survive (L2, L3)
 - [`docs/OWNERSHIP_AND_SUPPORT.md`](docs/OWNERSHIP_AND_SUPPORT.md) — ownership register and request routing (L4)
 - [`docs/TAKEAWAY_CHECKLIST.md`](docs/TAKEAWAY_CHECKLIST.md) — what to run on your own project Monday (L6)
+
+## Support and maintenance
+
+This repo is the companion project for a 90-minute hands-on lab at dbt Summit 2026. It stays public
+after the event so you can revisit the exercises or lift the patterns into your own project.
+
+- **Provided as-is, without SLAs.** Maintained on a best-effort basis by the owning team.
+- **Not a supported dbt Labs product.** Nothing here is covered by a dbt Labs support agreement, and
+  the code is illustrative rather than production-hardened.
+- **Requests and problems:** open a GitHub issue. Pull requests are not accepted on this repo — it
+  tracks a specific taught session, so it needs to stay in sync with the lab. Issues are read, but no
+  response time is promised.
+- **The data is fictional.** Merlin & Co. Apothecaries is generated training data. No real customer,
+  company, or production data appears anywhere in this project.
+- **You bring your own warehouse.** The workshop environment is only available to attendees during
+  the session. To run this afterwards, point `profiles.yml` at your own Snowflake account and load
+  your own copy of the source tables — see `models/staging/_merlinco_sources.yml` for the shape.
+
+Licensed under the Apache License 2.0. See [`LICENSE`](LICENSE).
