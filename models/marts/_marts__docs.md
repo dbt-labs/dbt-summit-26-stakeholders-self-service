@@ -10,7 +10,18 @@ block below.)
 
 The prose below is the "before" state: technically accurate, useless to a
 stakeholder. Rewriting it is Lab 1. See labs/01-document-for-humans-and-ai/.
+
+fct_customer_lifetime_value is the block every attendee rewrites. The other four
+are the same "before" state on other models — worked examples, and stretch
+targets for anyone who finishes early.
 -->
+
+{% docs fct_customer_lifetime_value %}
+
+Customer lifetime value fact at one row per customer, aggregated from the order financial rollup in the intermediate layer.
+
+{% enddocs %}
+
 
 {% docs fct_order_items %}
 

@@ -66,7 +66,7 @@ haven't checked.
 
 | Lab | Lesson | Time | Most likely stall |
 |---|---|---|---|
-| 1 Document | L2 | 15 | Perfectionism on column docs. Push them to 4–5 columns and move on. Watch for anyone writing lab notes *inside* a docs block — it all ships to the catalog. |
+| 1 Document | L2 | 15 | Perfectionism on column docs. Push them to 4–5 columns, and to `grain`/`intended_use`/`caveats` on only two or three of those. Column `meta:` at the top level instead of under `config:` is `dbt1060` — a warning-shaped error that drops the keys, so it's worth calling out before they start rather than after. Watch for anyone writing lab notes *inside* a docs block — it all ships to the catalog. |
 | 2 Trust signals | L3 | 15 | `freshness` / `loaded_at_field` at the top level instead of under `config:` (`dbt1060`) — this is the first YAML edit of the day, so it lands hard. Then `dbt source freshness` erroring on static data reading as their mistake. The business-assumption test is `accepted_values` on `order_status` — and it needs the `arguments:` wrapper this project uses, not the shape in the dbt docs, which errors with `dbt1159`. |
 | 3 Ownership | L4 | 7 | Exposure YAML shape. Have the snippet ready to paste — this is guided, not discovery. |
 | 4 Access | L5 | 12 | Contracts require `data_type` on every column — and `fct_order_items` has 7 columns not yet in the YAML at all, so it's 16 entries to author, not 9. Point anyone short on time at `dim_shops` (5 columns). Step 1 is now `public` plus dbt's default `protected`; nobody should be setting `private`. If someone does and there's no group, it parses clean and enforces nothing — the trap is silence, not an error. |
