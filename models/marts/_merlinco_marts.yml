@@ -1,10 +1,15 @@
 version: 2
 
-# The four models wired to doc blocks in _marts__docs.md are the Lab 1 targets:
-# fct_order_items, dim_potions, dim_shops, dim_customers. Their descriptions are
-# deliberately developer-grade — accurate, and useless to a stakeholder.
+# The Lab 1 target is fct_customer_lifetime_value, which has its own file:
+# models/marts/fct_customer_lifetime_value.yml. Everyone documents that one model,
+# so tables can compare their prose line by line.
 #
-#   Lab 1 (Lesson 2): rewrite those doc blocks + the column descriptions
+# The models wired to doc blocks in _marts__docs.md — fct_order_items, dim_potions,
+# dim_shops, dim_customers — are the same developer-grade "before" state: accurate,
+# and useless to a stakeholder. Worked examples in the lesson, stretch targets for
+# anyone who finishes Lab 1 early.
+#
+#   Lab 1 (Lesson 2): rewrite the doc block + the column descriptions
 #   Lab 2 (Lesson 3): the missing tests and maturity markers here; source freshness goes in
 #                     models/staging/_merlinco_sources.yml
 #   Lab 3 (Lesson 4): config.meta owner, groups, exposures
@@ -506,3 +511,4 @@ models:
         description: Active membership flag.
         dimension:
           type: categorical
+  

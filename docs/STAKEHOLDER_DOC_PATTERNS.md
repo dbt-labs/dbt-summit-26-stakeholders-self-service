@@ -66,6 +66,24 @@ models:
 
 Write it once and every consumption path inherits it — the catalog, the Semantic Layer, and any AI assistant reading the project.
 
+### The same four questions, one level down
+
+A stakeholder rarely reads a model description. They read the column they just dropped into a filter. For the two or three columns where two people could defend two different numbers, repeat the questions on the column itself:
+
+```yaml
+- name: shop_count
+  description: "How many different shops this customer has ever ordered from."
+  config:
+    meta:
+      grain: "Whole customer history, not per year."
+      intended_use: "Spotting customers who spread their buying across shops. Not a measure of shop performance."
+      caveats: "A customer who has never ordered shows 0, not null."
+```
+
+`grain`, `intended_use` and `caveats` aren't reserved dbt keys — they're a convention this project adopts so the same three things are answerable everywhere. "What is this" stays in `description`. `meta` must sit under `config:`; at the top level of a column it's `dbt1060` and the keys are dropped.
+
+Do this for the columns that carry the traps, not for all of them. Twenty columns each carrying three keys of boilerplate is how a catalog stops being read.
+
 **Ownership metadata (`config.meta` owner, groups, exposures) comes in Lesson 4.** Resist adding it now; the point of Lab 1 is that a data product can be perfectly described and still have nobody accountable for it.
 
 ## The test for whether your docs are good

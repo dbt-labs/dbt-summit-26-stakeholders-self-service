@@ -1,0 +1,77 @@
+version: 2
+
+# LAB 1 (LESSON 2) TARGET — this is the file attendees edit.
+#
+# The prose description lives in the doc block in _marts__docs.md and is pulled
+# in below with doc(). The column descriptions here are blank on purpose: step 3
+# of Lab 1 is filling in the ones a stakeholder actually touches — the ones that
+# show up in a filter or a sum. Not all of them.
+#
+# Step 3 also asks for grain / intended_use / caveats on the two or three columns
+# most likely to be misread:
+#
+#   - name: shop_count
+#     description: "..."
+#     config:
+#       meta:
+#         grain: "..."
+#         intended_use: "..."
+#         caveats: "..."
+#
+#   Lab 2 (Lesson 3): tests and maturity markers
+#   Lab 3 (Lesson 4): config.meta owner, groups, exposures
+#   Lab 4 (Lesson 5): config.access + contracts
+#
+# access, group, meta, tags and contract must all be nested under `config:` —
+# top level is rejected with dbt1060.
+
+models:
+  - name: fct_customer_lifetime_value
+    description: '{{ doc("fct_customer_lifetime_value") }}'
+    columns:
+      - name: customer_id
+        description: ""
+      - name: signed_up_date
+        description: ""
+      - name: home_region
+        description: ""
+      - name: favored_discipline
+        description: ""
+      - name: first_order_date
+        description: ""
+      - name: last_order_date
+        description: ""
+      - name: order_count
+        description: ""
+      - name: billable_order_count
+        description: ""
+      - name: completed_order_count
+        description: ""
+      - name: shop_count
+        description: ""
+      - name: lifetime_order_item_count
+        description: ""
+      - name: lifetime_gross_revenue_gold
+        description: ""
+      - name: lifetime_discount_gold
+        description: ""
+      - name: lifetime_net_revenue_gold
+        description: ""
+      - name: returned_revenue_gold
+        description: ""
+      - name: lifetime_collected_gold
+        description: ""
+      - name: lifetime_refunded_gold
+        description: ""
+      - name: lifetime_net_collected_gold
+        description: ""
+      - name: average_order_value_gold
+        description: ""
+      - name: days_to_first_order
+        description: ""
+      - name: days_since_last_order
+        description: ""
+      - name: has_ordered
+        description: ""
+      - name: is_repeat_customer
+        description: ""

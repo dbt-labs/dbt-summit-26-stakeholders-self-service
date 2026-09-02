@@ -12,6 +12,8 @@ Pick your most-used mart — the one hundreds of decisions run through — and s
 - [ ] Grain stated as a sentence
 - [ ] Two or three specific caveats that would produce wrong-but-believable numbers
 
+  The last three repeat one level down, as `grain` / `intended_use` / `caveats` under `config.meta`, on the two or three columns most likely to be misread. That's where a stakeholder is actually looking.
+
 **Believable** (Lesson 3)
 - [ ] Source freshness thresholds that reflect reality
 - [ ] A test encoding a business assumption, not just a uniqueness check
