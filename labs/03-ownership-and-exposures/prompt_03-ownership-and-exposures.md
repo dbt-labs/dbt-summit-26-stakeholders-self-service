@@ -6,31 +6,51 @@ Short and tightly scoped. The concept discussion carries this lesson; the build 
 
 ## Your task
 
-1. **Add an owner.** Extend the `config.meta` block you started in Lab 2 with `owner`, `support_channel`, and `response_sla` — leave the `maturity` you already set, and add to that block rather than opening a second `meta:` key, which errors with `DuplicateConfigKey (dbt1059)`. Top-level `meta`, `group` and `access` are rejected as unexpected keys (`dbt1060`); they must be nested under `config:`. Use a *team* name, never an individual — people change jobs, and an owner with no stated response expectation isn't an owner.
-2. **Define a group.** Create a top-level `groups:` block in `models/marts/_merlinco_marts.yml` and assign your marts to it with `config.group`, so ownership is structural rather than a comment. `owner` is required on a group — omit it and you get `missing field owner` (`dbt1013`).
+1. **Add an owner.** In `models/marts/fct_customer_lifetime_value.yml`, extend the `config.meta` block you started in Lab 2 with `owner`, `support_channel`, and `response_sla` — leave the `maturity` you already set, and add to that block rather than opening a second `meta:` key, which errors with `DuplicateConfigKey (dbt1059)`. Top-level `meta`, `group` and `access` are rejected as unexpected keys (`dbt1060`); they must be nested under `config:`. Use a team name, never an individual — people change jobs, and an owner with no stated response expectation isn't an owner.
 
-   ```yaml
+```yaml
+   config:
+     meta:
+       maturity: production
+       owner:
+         name: Commerce Analytics
+       support_channel: '#commerce-analytics-support'
+       response_sla: '2 business hours for trust incidents'
+```
+
+2. **Define a group.** Create a new file, `models/marts/groups.yml`, with a top-level `groups:` block, and assign your mart to it with `config.group` back in `fct_customer_lifetime_value.yml` — so ownership is structural rather than a comment. `owner` is required on a group — omit it and you get `missing field owner` (`dbt1013`). A group isn't owned by one mart, it's shared across every model that joins it — that's why it lives in its own file rather than inside the model.
+
+```yaml
+   # models/marts/groups.yml
    groups:
      - name: commerce_analytics
        owner:
          name: Commerce Analytics
          email: commerce-analytics@merlinco.example
-   ```
-3. **Add an exposure.** Define an `exposure` for the regional director's revenue dashboard in `models/marts/_merlinco_marts.yml`, depending on your mart plus `dim_shops`. `type` and `owner` are both required — leaving `type` out fails with `missing field type` (`dbt1013`). Swap `fct_order_items` below for whichever mart you documented in Lab 1; an exposure that doesn't name your model can't answer "who breaks if I change this?" about it.
+```
 
-   ```yaml
+```yaml
+   # models/marts/fct_customer_lifetime_value.yml
+   config:
+     group: commerce_analytics
+```
+
+3. **Add an exposure.** Create a new file, `models/marts/exposures.yml`, defining an `exposure` for the retail ops customer LTV dashboard, depending on your mart. `type` and `owner` are both required — leaving `type` out fails with `missing field type` (`dbt1013`). Same convention as `groups.yml`: an exposure is a claim made *about* the model, from outside it, so it doesn't live inside the model's own file.
+
+```yaml
+   # models/marts/exposures.yml
    exposures:
-     - name: regional_revenue_dashboard
+     - name: customer_ltv_dashboard
        type: dashboard
-       url: https://bi.merlinco.example/dashboards/regional-revenue
-       description: Revenue by shop region, reviewed weekly by the regional directors.
+       url: https://bi.merlinco.example/dashboards/customer-ltv
+       description: Customer lifetime value, reviewed weekly by retail ops.
        depends_on:
-         - ref('fct_order_items')
-         - ref('dim_shops')
+         - ref('fct_customer_lifetime_value')
        owner:
          name: Commerce Analytics
          email: commerce-analytics@merlinco.example
-   ```
+```
+
 4. Look at the exposure in **dbt Catalog**. That's the answer to "who breaks if I change this?" — available to you for the first time.
 
 ## Why the exposure matters more than it looks
