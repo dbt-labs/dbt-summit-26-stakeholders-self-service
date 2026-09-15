@@ -16,7 +16,13 @@ models:
       real buyers.
       
     config:
+      group: commerce_analytics
       meta:
+        maturity: production
+        owner:
+          name: Commerce Analytics
+        support_channel: '#commerce-analytics-support'
+        response_sla: '2 business hours for trust incidents'
         grain: One row per customer who has ever signed up — including customers who have never placed an order.
         intended_use: "Use for lifetime revenue, order counts, and repeat-purchase questions at the customer level."
         caveats: "Includes customers who never ordered, so filter on has_ordered before summing or averaging revenue columns. 'Average order value' is not a single number in this project"
