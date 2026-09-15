@@ -39,7 +39,7 @@ Layers: `models/staging/` (views) → `models/intermediate/` (views) → `models
 1. Incognito window → **workshops.us1.dbt.com/workshop**
 2. Select **Scaling trusted self-service for dbt stakeholders**
 3. Enter the passcode your instructor gives you at the start of the session
-4. Your account initializes from this repo — a personal target schema in `ANALYTICS_WIZARD`, read access to the `RAW_WIZARD.MERLINCO_APOTHECARIES` source
+4. Your account initializes from this repo — a personal target schema in `DBT_LEARN`, read access to the `RAW.MERLINCO_APOTHECARIES` source
 5. Run `dbt build` once. **Do this before Lab 1.** Some tests fail on this dataset by design — your instructor will say which — so flag a TA if you see anything beyond those, or if the build doesn't complete.
 
 Prefer local? Copy `profiles.yml.example` to `~/.dbt/profiles.yml` and fill in every `{placeholder}` — your own Snowflake account, credentials, database, warehouse and role. Watch the last one: `schema: dbt_{flastname}` left as-is won't error, it will silently build every model into a schema literally named `dbt_{flastname}`. You'll also need your own copy of the source tables, since the workshop warehouse is only reachable during the session. The platform IDE is the supported path today.
