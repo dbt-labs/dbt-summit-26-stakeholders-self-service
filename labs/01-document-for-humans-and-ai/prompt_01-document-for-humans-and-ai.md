@@ -10,20 +10,25 @@ Nothing is broken. The project simply isn't consumable by anyone who didn't buil
 
 ## Your task
 
-Make `fct_customer_lifetime_value` explain itself. Everyone works on the same model, so you can compare with your neighbour line by line.
+Make `fct_customer_lifetime_value` explain itself. Everyone works on the same model, so you can compare with your neighbour line by line. Everything you touch today lives in one file: `models/marts/fct_customer_lifetime_value.yml`.
 
 1. Try to answer the question below using only what's documented today. Write down every point where you had to guess.
 
    > "How many customers do we have in the Alchemists' Guild, and what's their average order value?"
 
+2. Write a model-level `description` directly on `fct_customer_lifetime_value` in `models/marts/fct_customer_lifetime_value.yml`. 
+        Answer the four questions from [`docs/STAKEHOLDER_DOC_PATTERNS.md`](../../docs/STAKEHOLDER_DOC_PATTERNS.md):  what is this, when should I use it, what's the grain, what should I watch out for. 
+        put the grain, intended_use, caveats into config meta as in the example below. 
+        
+        /This ships straight to the catalog and to Copilot, so no dbt vocabulary — no "table", "model", "fact", "joined", "upstream".
 
+3. Document the columns a stakeholder will actually touch — the ones that appear in a filter or a sum. Say what they *mean*, not what type they are. You do not need to document all of them; four or five is the target, and these three are a good place to start:
 
-2. Rewrite the fct_customer_lifetime_value doc block in `models/marts/_marts__docs.md` — the prose inside the block only; anything you put there ships to the catalog and to Copilot to answer the four questions from [`docs/STAKEHOLDER_DOC_PATTERNS.md`](../../docs/STAKEHOLDER_DOC_PATTERNS.md): what is this, when should I use it, what's the grain, what should I watch out for.
+   - `customer_id`
+   - `average_order_value`
+   - `first_order_date`
 
-
-3. Document the columns a stakeholder will actually touch — the ones that appear in a filter or a sum. Column descriptions live in `models/marts/fct_customer_lifetime_value.yml`, not in the docs file you just edited. Say what they *mean*, not what type they are. You do not need to document all of them; four or five is the target.
-
-   Then pick the **two or three columns most likely to be misread** — the ones where two people would defend two different numbers — and take them further than a description. Give each one `grain`, `intended_use` and `caveats` under `config.meta`, so the same four questions you answered for the model are answered again at the column a stakeholder is about to drag into a chart:
+   Then pick the **two or three columns most likely to be misread** — the ones where two people would defend two different numbers — and take them further than a description. Give each one `grain`, `intended_use` and `caveats` under `config.meta`, so the same four questions you answered for the model are answered again at the column a stakeholder is about to drag into a chart. `average_order_value` is a strong candidate: there's a second thing in this project called the same name, and neither is what `avg()` over the column gives you.
 
    ```yaml
    - name: shop_count
@@ -37,10 +42,9 @@ Make `fct_customer_lifetime_value` explain itself. Everyone works on the same mo
 
    `meta` must be nested under `config:`. At the top level of the column it parses as `dbt1060` and your keys are silently dropped. Free-text values are fine — these are read by people and by Copilot, not by a validator.
 
-
-
-
 4. Run `dbt parse` to confirm the YAML is valid. Then read your own work back the way a stakeholder would — your instructor will say whether that's **dbt Catalog** in the platform, which refreshes on a job run rather than on your local edits, or the local docs site (`dbt compile --write-index`, then `dbt docs serve` — the server reads the parquet index, not `catalog.json`, and `dbt docs generate` is deprecated in Fusion).
+
+5. Trade with your neighbour. Give them only the question from step 1 and your edited `.yml` — no explanation. Can they answer it, including spotting the trap, without asking you anything?
 
 ## Constraints
 
@@ -58,7 +62,7 @@ The question is two questions, and the model answers neither cleanly.
 
 - **"customers in the Alchemists' Guild"** — there is no guild anywhere in this model. That fact alone is worth a line in "when should I use it", because it tells the next person where to go instead, and what happens when they get there.
 - **"how many customers"** — one row per customer, but *which* customers? Count them and see whether the number matches your idea of a customer.
-- **"average order value"** — there is a column with that name. There is also something else in the project called that. They are not the same number, and neither is `avg()` over the column.
+- **"average order value"** — there is a column with that name, `average_order_value`. There is also something else in the project called that. They are not the same number, and neither is `avg()` over the column.
 
 Three different defensible answers to one question is the whole lesson. Your docs don't have to pick one. They have to make the stakeholder aware there's a choice before they take a number into a meeting.
 
@@ -72,4 +76,4 @@ That's the bar. Not "the fields are filled in." Someone else got the right answe
 
 Ask **dbt Copilot** to summarize your model, then ask it the question above. Compare its answer before and after your edits. The delta is the entire argument for this lab — screenshot it for your team.
 
-Still time? Take a second question from [`docs/QUESTION_BANK.md`](../../docs/QUESTION_BANK.md) and the model it lands on — Q1 goes to `fct_order_items`, Q3 to `fct_orders`. Their doc blocks are in the same file, in the same developer-grade "before" state.
+Still time? Take a second question from [`docs/QUESTION_BANK.md`](../../docs/QUESTION_BANK.md) and the model it lands on — Q1 goes to `fct_order_items`, Q3 to `fct_orders`. Their doc blocks live in `_marts__docs.md`, in the same developer-grade "before" state — a different pattern from what you just did on your own model, and worth noticing: writing the description straight in the `.yml` is simpler for one model, but a doc block is what lets several models share the same wording. Worth asking your instructor which one your team should standardize on.
