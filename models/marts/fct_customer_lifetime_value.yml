@@ -2,36 +2,15 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
-    description: >
-      Lifetime summary for every customer who has ever signed up, whether or not
-      they've placed an order.
- 
-      Use this for lifetime revenue, order counts, and repeat-purchase questions
-      at the customer level. It does not contain any guild or membership
-      information 
- 
-      Two things produce a wrong-but-believable number here. First, this
+    description:
       includes customers who never ordered — filter on has_ordered before
       summing or averaging revenue, or you'll understate the average across
       real buyers.
       
-    config:
-      meta:
-        grain: One row per customer who has ever signed up — including customers who have never placed an order.
-        intended_use: "Use for lifetime revenue, order counts, and repeat-purchase questions at the customer level."
-        caveats: "Includes customers who never ordered, so filter on has_ordered before summing or averaging revenue columns. 'Average order value' is not a single number in this project"
-
     columns:
 
       - name: customer_id
-        description: "The customer's unique identifier. One row per customer_id — including customers who signed up but have never placed an order."
-        config:
-          meta:
-            grain: "One value per customer, not per order or per membership."
-            intended_use: "Use to join or count customers. Every signed-up customer has exactly one row, whether or not they've ever ordered."
-            caveats: "Counting rows on this column counts every signed-up customer, not just buyers. If the question is 'how many customers bought something,' filter on has_ordered first."
-
-
+        description:
       - name: signed_up_date
         description: ""
       - name: home_region
@@ -39,21 +18,8 @@ models:
       - name: favored_discipline
         description: ""
 
-  
-
-
       - name: first_order_date
-        description: "The date of this customer's earliest order, across every shop and channel. Null for a customer who has never ordered."
-        config:
-          meta:
-            grain: "One date per customer, computed across their whole order history — not per shop or per channel."
-            intended_use: "Use for cohort analysis or time-to-first-order questions. Combine with signed_up_date if you need the gap between signup and first purchase."
-            caveats: "Null does not mean 'unknown' — it means the customer has never placed an order. Excluding nulls silently drops non-buyers instead of counting them as such."
-
-
-
-
-        
+        description: ""              
       - name: last_order_date
         description: ""
       - name: order_count
