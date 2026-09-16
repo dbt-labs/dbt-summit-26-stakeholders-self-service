@@ -18,8 +18,7 @@ targets for anyone who finishes early.
 
 {% docs fct_customer_lifetime_value %}
 
-Customer lifetime value fact at one row per customer, aggregated from the order financial rollup in the intermediate layer.
-
+Customer lifetime value 
 {% enddocs %}
 
 
