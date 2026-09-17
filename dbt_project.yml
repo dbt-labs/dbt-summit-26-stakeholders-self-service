@@ -18,11 +18,18 @@ profile: 'merlin-co'
 #   account-host: "ab123.us1.dbt.com"
 
 # Without the dbt-cloud block above, every invocation emits
-# `InvalidConfig (dbt1005): Skipping semantic manifest validation`. The semantic models and
-# metrics in this project are real and are validated in the platform; only the *local* check
-# is skipped. To silence it locally, export
-# DBT_ENGINE_NO_WARN_SEMANTIC_MANIFEST_VALIDATION=1 — the CI workflow does this, so a real
-# warning in CI is never buried under an expected one.
+# `InvalidConfig (dbt1005): Skipping semantic manifest validation`.
+#
+# Do not reflexively suppress that warning. It is load-bearing: it is telling you that the
+# semantic models and metrics in this project have NOT been checked, and a locally clean
+# `dbt parse` says nothing about whether they are valid. Suppressing it during the build of
+# this branch hid three genuine errors — duplicate dimension/primary-entity pairings between
+# dim_customers and fct_customer_lifetime_value — which only surfaced on a platform run.
+#
+# DBT_ENGINE_NO_WARN_SEMANTIC_MANIFEST_VALIDATION=1 exists and will silence it. Reach for it
+# only when you have already validated in the platform. CI deliberately does not set it; it
+# allow-lists this one warning by message instead, so the warning stays visible in the log
+# while everything else still fails the build.
 
 
 # These configurations specify where dbt should look for different types of files.

@@ -18,11 +18,6 @@ on:
 jobs:
   parse:
     runs-on: ubuntu-latest
-    env:
-      # The dbt-cloud block in dbt_project.yml is intentionally commented out, which makes
-      # dbt1005 "Skipping semantic manifest validation" fire on every invocation. Suppressed so
-      # a real warning is never buried under an expected one.
-      DBT_ENGINE_NO_WARN_SEMANTIC_MANIFEST_VALIDATION: "1"
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # actions/checkout@v6
 
@@ -54,12 +49,27 @@ jobs:
           PROFILE
 
       - name: dbt parse
-        # A clean parse with zero warnings is the bar. Attendees read these files as the
-        # reference, so a warning here is a teaching defect, not noise to scroll past.
+        # A clean parse is the bar. Attendees read these files as the reference, so a warning
+        # here is a teaching defect, not noise to scroll past.
+        #
+        # Exactly one warning is allowed through: "Skipping semantic manifest validation",
+        # which fires because the dbt-cloud block in dbt_project.yml is intentionally
+        # commented out. It is allow-listed by message rather than suppressed with
+        # DBT_ENGINE_NO_WARN_SEMANTIC_MANIFEST_VALIDATION, because suppressing it once already
+        # hid three real semantic-model errors that only a platform build caught. Left visible,
+        # it is a standing reminder that green CI here does NOT mean the semantic models parse.
         run: |
           set -o pipefail
           dbt parse --target ci 2>&1 | tee parse.log
-          if grep -qE '^\[(warning|error)\]' parse.log; then
-            echo "::error::dbt parse emitted warnings or errors — see the log above"
+          if grep -E '^\[(warning|error)\]' parse.log \
+              | grep -v 'Skipping semantic manifest validation' \
+              | grep -q .; then
+            echo "::error::dbt parse emitted unexpected warnings or errors — see the log above"
             exit 1
           fi
+
+      - name: Remind that semantic models are unvalidated here
+        run: |
+          echo "::notice::dbt parse does not validate the semantic manifest without platform \
+          config. Semantic model and metric changes must be confirmed by a platform build — \
+          see docs/EXPECTED_FAILURES.md."

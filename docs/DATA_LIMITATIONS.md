@@ -108,6 +108,18 @@ declaration is wrong. Columns to check first:
   `number(9,0)` (`datediff`)
 - every `*_count` column declared `number(18,0)`
 
+## Semantic models cannot be validated locally
+
+Without platform configuration, `dbt parse` skips semantic manifest validation and says so in a
+warning. Twelve semantic models and twenty-four metrics in this project are therefore only
+checked by a platform build.
+
+This is not a data limitation so much as a tooling one, but it belongs on the same page: if you
+change an `entity`, `dimension` or `metric` block here, a clean local parse is not evidence that
+it works. See [`EXPECTED_FAILURES.md`](EXPECTED_FAILURES.md) for the specific rule that caught
+this project out — a dimension may be paired with a given primary entity only once, so the
+dimension model owns descriptive dimensions and facts reach them through the join.
+
 ## Row counts are small
 
 Fifteen shops and a few thousand orders. Enough to demonstrate every pattern here; not enough

@@ -32,15 +32,41 @@ messiness, not from a build against the workshop warehouse — there was no ware
 available when this branch was built. Before the session, run the verification pass below and
 correct this table from the actual output.
 
+## A local `dbt parse` does not validate the semantic manifest
+
+This is the most important line on this page, and it was learned the hard way.
+
+Without platform configuration, dbt emits `InvalidConfig (dbt1005): Skipping semantic manifest
+validation` and carries on. A locally clean parse therefore tells you **nothing** about whether
+the semantic models and metrics are valid.
+
+While this branch was being built, that warning was suppressed to get a zero-warning local
+parse. It hid three real errors — duplicate dimension/primary-entity pairings, where
+`fct_customer_lifetime_value` declared `signed_up_date`, `home_region` and `favored_discipline`
+as dimensions on the `customer` entity that `dim_customers` already owned. Nothing local caught
+it; a platform `dbt build` failed immediately with all three.
+
+The fix and the rule that came out of it:
+
+- A dimension may be paired with a given primary entity **once** across the project. The
+  dimension model owns the descriptive dimensions; facts sharing that entity reach them through
+  the join and must not redeclare them.
+- `fct_customer_lifetime_value` now declares no `dimension:` block on those three columns, and
+  its `agg_time_dimension` is `first_order_date` rather than `signed_up_date`.
+- **Any change to a `semantic_model`, `entity`, `dimension` or `metric` block must be confirmed
+  by a platform build before it is trusted.** CI here deliberately leaves the warning visible
+  rather than suppressing it, as a standing reminder.
+
 ## Verification pass — run this before the session
 
+Run this **in the platform**, not locally, so the semantic manifest is actually validated:
+
 ```bash
-export DBT_ENGINE_NO_WARN_SEMANTIC_MANIFEST_VALIDATION=1
 dbt build 2>&1 | tee /tmp/merlinco-build.log
 dbt source freshness 2>&1 | tee /tmp/merlinco-freshness.log
 ```
 
-Then check three things and update this page:
+Then check four things and update this page:
 
 1. **Which data tests failed.** Correct the table above. Any failure not listed there is a real
    problem, not a planted one.
@@ -52,6 +78,9 @@ Then check three things and update this page:
    alongside every `relationships` test, because a relationships test passes on a null. If any
    of them fail on real data, that is a finding to document on the column — not a test to
    delete.
+4. **Whether the semantic manifest validates.** Twelve semantic models, twenty-four metrics.
+   The duplicate-pairing class of error is fixed and audited project-wide, but this is the only
+   place it can be checked.
 
 ## What should be green
 

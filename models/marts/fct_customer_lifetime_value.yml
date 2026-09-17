@@ -15,7 +15,11 @@ models:
     description: '{{ doc("fct_customer_lifetime_value") }}'
     semantic_model:
       enabled: true
-    agg_time_dimension: signed_up_date
+    # first_order_date, not signed_up_date: dim_customers is the owner of the customer's
+    # descriptive dimensions, and a dimension can only be paired with a primary entity once
+    # across the whole project. Lifetime metrics sliced by first-order cohort is the standard
+    # cut anyway — but see the note on the metrics below about who drops out.
+    agg_time_dimension: first_order_date
     config:
       access: public
       group: commerce_analytics
@@ -33,13 +37,20 @@ models:
         intended_use: "Lifetime spend, order counts, and repeat-purchase questions about an individual customer. Not for guild questions: there is no guild information here at all."
         caveats: "Non-buyers are included and are counted, so filter on has_ordered before counting customers or averaging spend. Absence looks different column to column — spend columns show 0 for a non-buyer, average_order_value shows nothing at all. 'Average order value' means three different things in this project. And days_since_last_order moves overnight without the data changing."
 
+    # A note that applies to every metric here: the time axis is first_order_date, which is
+    # empty for wizards who never bought. Sliced by time, non-buyers drop out entirely; asked
+    # for as a single total, they are included wherever the column they sum is 0 rather than
+    # empty. lifetime_customers is the one to watch — its total counts non-buyers and its
+    # time series does not.
     metrics:
       - name: lifetime_customers
         type: simple
         label: Signed-up Customers
         description: >
           Every wizard on the signup list, whether or not they ever bought anything. This is
-          deliberately not "customers" — see buying_customers for that.
+          deliberately not "customers" — see buying_customers for that. Careful with a time
+          slice: the time axis of this data product is first purchase date, so a wizard who
+          never bought has no date to sit on and falls out of any trend.
         agg: count_distinct
         expr: customer_id
       - name: buying_customers
@@ -98,22 +109,21 @@ models:
             intended_use: "Counting or identifying customers, and bringing other data alongside."
             caveats: "Counting these counts every signed-up wizard, not just buyers. If the question is 'how many customers bought something', filter on has_ordered first — or use the buying_customers metric, which does it for you."
 
+      # These three are denormalized copies of columns dim_customers owns. They carry
+      # descriptions and data types — they are real columns and a contract covers them — but
+      # deliberately no `dimension:` block. A dimension may be paired with a given primary
+      # entity only once in the project, and dim_customers is the right owner of what a
+      # customer *is*. Group any metric here by the dim_customers version instead; the shared
+      # `customer` entity makes that resolve, and it means the two can never disagree.
       - name: signed_up_date
-        description: The day the wizard signed up.
+        description: The day the wizard signed up. Group by the dim_customers copy for reporting.
         data_type: date
-        granularity: day
-        dimension:
-          type: time
       - name: home_region
         description: The region the wizard lives in — not the region of the shop they bought from.
         data_type: varchar
-        dimension:
-          type: categorical
       - name: favored_discipline
         description: The branch of magic the wizard said they favour at signup.
         data_type: varchar
-        dimension:
-          type: categorical
 
       - name: first_order_date
         description: The day of this wizard's earliest purchase, across every shop and channel.
