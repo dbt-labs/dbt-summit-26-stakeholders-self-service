@@ -30,6 +30,9 @@ labels every table with which tier it uses:
 | B | `loaded_at_query` borrowing a parent table's clock | `RAW_ORDER_ITEMS`, `RAW_POTION_INGREDIENTS` | The parent's newest event is recent. Breaks silently if the child ever loads separately from the parent. |
 | C | `freshness` with no `loaded_at_field` (warehouse `last_altered`) | `RAW_SHOPS`, `RAW_SUPPLIERS`, `RAW_POTIONS`, `RAW_INGREDIENTS`, `RAW_GUILDS`, `RAW_GUILD_MEMBERSHIPS` | The table was written recently. Nothing at all about completeness or correctness. |
 
+Tier C is confirmed working against the warehouse on Fusion 2.0.4 — it needs no timestamp column
+of any kind, which makes it the answer for `RAW_INGREDIENTS`, a table with no date column at all.
+
 ### Why the Tier A and B checks are red, and why that is correct
 
 The dataset is static and deterministically generated. Its newest order is fixed in time, so
@@ -43,6 +46,22 @@ reality is *correct* even when the data in front of it is a fixture. Loosening t
 check that can never fire, which is worse than no check because it looks like coverage.
 
 A consumer who can see a stale source is better served than one who sees nothing.
+
+### The Tier C tables drift red too, eventually
+
+This applies to *every* tier, not just the event-time ones, and it is the honest limit of the
+argument above. The workshop warehouse loads `RAW` once and never touches it, so the warehouse's
+`last_altered` is as frozen as the event timestamps. A Tier C check that passes today will warn
+in a few weeks and error after that, with nothing in the data or the config changing.
+
+Measured on 2026-09-17: eleven of twelve tables were stale, and `RAW_GUILDS` passed only because
+its window is 30d/90d and the load happened to be inside it. See
+[`EXPECTED_FAILURES.md`](EXPECTED_FAILURES.md) for the full table.
+
+So on a static fixture there is no threshold that stays green. Widening the window only moves
+the date at which it goes red. Making the data move is an environment change, not a project
+one — and the fact that freshness cannot be demonstrated green here is itself the clearest
+argument for why it belongs in a real project.
 
 ### Two ways to fix this properly
 

@@ -6,16 +6,56 @@ For instructors and TAs, and for anyone revisiting this repo after the event.
 say which." This is the page that says which, so a TA can tell a real problem from a planted
 one in seconds.
 
-## Source freshness: every table, always
+## Source freshness
 
-`dbt source freshness` fails on all twelve source tables. The dataset is static, so the newest
-event is fixed in time and every Tier A and Tier B threshold is already blown. Tier C tables
-depend on when the workshop warehouse last loaded them, so they may pass or fail depending on
-setup timing.
+**Measured** against the workshop warehouse on 2026-09-17 with Fusion 2.0.4:
+`dbt source freshness` exits non-zero with 6 errors and 10 warnings. `sources.json` is still
+written, so Catalog populates correctly despite the non-zero exit.
 
-This is the intended experience. See [`DATA_LIMITATIONS.md`](DATA_LIMITATIONS.md) for why
-loosening the thresholds would be the wrong fix. If an attendee's build is blocked by it, the
-flag is `--exclude-resource-type source`.
+| Source table | Tier | Result | Expected? |
+|---|---|---|---|
+| `RAW_ORDERS` | A | error — stale | Yes |
+| `RAW_PAYMENTS` | A | error — stale | Yes |
+| `RAW_BREW_EVENTS` | A | error — stale | Yes |
+| `RAW_CUSTOMERS` | A | error — stale | Yes |
+| `RAW_ORDER_ITEMS` | B | error — stale | Yes |
+| `RAW_POTION_INGREDIENTS` | B | *was* `dbt9002` type error | **No — fixed.** `loaded_at_query` returned a date; it now casts to `timestamp_ntz`. Expect stale from here. |
+| `RAW_GUILD_MEMBERSHIPS` | C | warn — stale | Yes |
+| `RAW_INGREDIENTS` | C | warn — stale | Yes |
+| `RAW_POTIONS` | C | warn — stale | Yes |
+| `RAW_SHOPS` | C | warn — stale | Yes |
+| `RAW_SUPPLIERS` | C | warn — stale | Yes |
+| `RAW_GUILDS` | C | **pass** | Yes — its thresholds are 30d/90d, and the warehouse load was inside 30 days |
+
+That run also confirmed something that could not be tested locally: **Tier C works**.
+Warehouse-metadata freshness, with no `loaded_at_field` at all, returns real timestamps in
+Fusion 2.0.4 — `RAW_GUILDS` passing is the proof, since a pass requires an actual measurement.
+
+### No threshold can stay green on this dataset
+
+Worth being blunt about, because it is the honest end of the argument in
+[`DATA_LIMITATIONS.md`](DATA_LIMITATIONS.md).
+
+The workshop warehouse loads `RAW` once and never touches it again. So the newest event time is
+frozen *and* the warehouse's `last_altered` is frozen. Every check therefore drifts one way only:
+pass → warn → error, as the calendar moves. `RAW_GUILDS` passes today and will warn, then error,
+with no change to the data or the config.
+
+A threshold that can never fire is useless; so is one that always fires. On a static fixture
+there is no third option, so the choice is to keep the thresholds honest and write this page.
+Do not "fix" a red freshness check here by widening the window — you would just be moving the
+date at which it goes red again.
+
+If a session needs green freshness for a demo, the only real fix is to make the data move:
+re-load `RAW`, or have the provisioning job touch the tables so `last_altered` is recent. That
+is an environment change, not a project change.
+
+### Consequences for running the project
+
+- `dbt source freshness` **will exit non-zero**. If it runs as its own job step, expect the job
+  to be marked failed. That is the intended state of this branch.
+- `dbt build` includes source freshness in Fusion, so a build on this branch hits the same
+  errors. Use `--exclude-resource-type source` to get a clean model build.
 
 ## Data tests: seeded messiness
 
