@@ -19,6 +19,13 @@ version: 2
 # immediately. That is correct behaviour on an honest threshold, not a broken config — see
 # docs/DATA_LIMITATIONS.md. Thresholds describe the pipeline you want, not the one you have.
 #
+# Every try_to_timestamp_ntz below also emits `dbt9002: timestamp type without a timezone, we
+# will assume a UTC timezone`. That warning is expected and the behaviour it describes is the
+# one we want. The raw text carries no offset, so there is no timezone to read; dbt assuming
+# UTC is deterministic. Casting to timestamp_tz instead would attach the *session* timezone,
+# which would make freshness results differ between environments for identical data. Leave the
+# ntz casts alone.
+#
 # Both `freshness` and `loaded_at_field` must be nested under `config:` — at the table level
 # they're rejected with dbt1060.
 
@@ -172,14 +179,17 @@ sources:
             description: Introduction date as text.
       - name: RAW_POTION_INGREDIENTS
         identifier: RAW_POTION_INGREDIENTS
-        # Tier B. Recipe lines have no timestamp; they change when the potion catalog changes,
-        # so they borrow the catalog's clock.
+        # Tier C, moved here from Tier B after a real freshness run showed the inconsistency.
+        #
+        # It first borrowed RAW_POTIONS' INTRODUCED_AT as a loaded_at_query. That was wrong on
+        # its own terms: INTRODUCED_AT is when a potion was *launched*, which is historical and
+        # says nothing about when recipe rows were loaded — so the child errored on an event
+        # clock while its own parent, measured by warehouse metadata, only warned. Same data,
+        # two verdicts.
+        #
+        # Recipe lines have no clock of their own, so they get the same treatment as the
+        # catalog they belong to.
         config:
-          # try_to_date parses INTRODUCED_AT correctly but returns a date, and loaded_at_query
-          # requires a timestamp — Fusion rejects it with dbt9002 "should have a timestamp
-          # type, but got Date32". Cast the result rather than swapping the parse function, so
-          # the parsing that is known to work on this column is left alone.
-          loaded_at_query: "select cast(max(try_to_date(INTRODUCED_AT)) as timestamp_ntz) from RAW.MERLINCO_APOTHECARIES.RAW_POTIONS"
           freshness:
             warn_after: {count: 7, period: day}
             error_after: {count: 30, period: day}

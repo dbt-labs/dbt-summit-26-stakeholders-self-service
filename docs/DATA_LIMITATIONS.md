@@ -27,8 +27,15 @@ labels every table with which tier it uses:
 | Tier | Mechanism | Tables | What it actually proves |
 |---|---|---|---|
 | A | `loaded_at_field` on a cast event timestamp | `RAW_ORDERS`, `RAW_PAYMENTS`, `RAW_BREW_EVENTS`, `RAW_CUSTOMERS` | The newest event is recent. Not that the load finished, and not that the day is complete. |
-| B | `loaded_at_query` borrowing a parent table's clock | `RAW_ORDER_ITEMS`, `RAW_POTION_INGREDIENTS` | The parent's newest event is recent. Breaks silently if the child ever loads separately from the parent. |
-| C | `freshness` with no `loaded_at_field` (warehouse `last_altered`) | `RAW_SHOPS`, `RAW_SUPPLIERS`, `RAW_POTIONS`, `RAW_INGREDIENTS`, `RAW_GUILDS`, `RAW_GUILD_MEMBERSHIPS` | The table was written recently. Nothing at all about completeness or correctness. |
+| B | `loaded_at_query` borrowing a parent table's clock | `RAW_ORDER_ITEMS` | The parent's newest event is recent. Breaks silently if the child ever loads separately from the parent. |
+| C | `freshness` with no `loaded_at_field` (warehouse `last_altered`) | `RAW_SHOPS`, `RAW_SUPPLIERS`, `RAW_POTIONS`, `RAW_INGREDIENTS`, `RAW_GUILDS`, `RAW_GUILD_MEMBERSHIPS`, `RAW_POTION_INGREDIENTS` | The table was written recently. Nothing at all about completeness or correctness. |
+
+Only one table is Tier B, and that is deliberate. Borrowing a parent's clock is only honest when
+the parent has a *dense* event clock and the child genuinely lands in the same load —
+`RAW_ORDER_ITEMS` behind `RAW_ORDERS` qualifies. `RAW_POTION_INGREDIENTS` initially borrowed
+`RAW_POTIONS`' `INTRODUCED_AT` and that was a mistake: a launch date is historical, so the child
+errored while its own parent only warned. When a child has no clock and its parent's clock is
+not a load signal, Tier C is the honest answer for both.
 
 Tier C is confirmed working against the warehouse on Fusion 2.0.4 — it needs no timestamp column
 of any kind, which makes it the answer for `RAW_INGREDIENTS`, a table with no date column at all.

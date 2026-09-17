@@ -8,28 +8,59 @@ one in seconds.
 
 ## Source freshness
 
-**Measured** against the workshop warehouse on 2026-09-17 with Fusion 2.0.4:
-`dbt source freshness` exits non-zero with 6 errors and 10 warnings. `sources.json` is still
-written, so Catalog populates correctly despite the non-zero exit.
+**Measured** against the workshop warehouse with Fusion 2.0.4, over three runs on 2026-09-17.
+`dbt source freshness` exits non-zero. `sources.json` is still written, so Catalog populates
+correctly despite the failure.
 
-| Source table | Tier | Result | Expected? |
+Expected on the current config: **5 errors, 11 warnings.**
+
+| Source table | Tier | Result | Why |
 |---|---|---|---|
-| `RAW_ORDERS` | A | error — stale | Yes |
-| `RAW_PAYMENTS` | A | error — stale | Yes |
-| `RAW_BREW_EVENTS` | A | error — stale | Yes |
-| `RAW_CUSTOMERS` | A | error — stale | Yes |
-| `RAW_ORDER_ITEMS` | B | error — stale | Yes |
-| `RAW_POTION_INGREDIENTS` | B | *was* `dbt9002` type error | **No — fixed.** `loaded_at_query` returned a date; it now casts to `timestamp_ntz`. Expect stale from here. |
-| `RAW_GUILD_MEMBERSHIPS` | C | warn — stale | Yes |
-| `RAW_INGREDIENTS` | C | warn — stale | Yes |
-| `RAW_POTIONS` | C | warn — stale | Yes |
-| `RAW_SHOPS` | C | warn — stale | Yes |
-| `RAW_SUPPLIERS` | C | warn — stale | Yes |
-| `RAW_GUILDS` | C | **pass** | Yes — its thresholds are 30d/90d, and the warehouse load was inside 30 days |
+| `RAW_ORDERS` | A | error — stale | Static dataset. By design. |
+| `RAW_PAYMENTS` | A | error — stale | Static dataset. By design. |
+| `RAW_BREW_EVENTS` | A | error — stale | Static dataset. By design. |
+| `RAW_CUSTOMERS` | A | error — stale | Static dataset. By design. |
+| `RAW_ORDER_ITEMS` | B | error — stale | Borrows `RAW_ORDERS`' event clock, which is frozen. By design. |
+| `RAW_GUILDS` | C | **pass** | 30d/90d window, and the warehouse load is inside it. Will warn, then error, as the calendar moves. |
+| `RAW_GUILD_MEMBERSHIPS` | C | warn — stale | Past 7d, inside 30d. |
+| `RAW_INGREDIENTS` | C | warn — stale | Past 7d, inside 30d. |
+| `RAW_POTIONS` | C | warn — stale | Past 7d, inside 30d. |
+| `RAW_SHOPS` | C | warn — stale | Past 7d, inside 30d. |
+| `RAW_SUPPLIERS` | C | warn — stale | Past 7d, inside 30d. |
+| `RAW_POTION_INGREDIENTS` | C | warn — stale | Past 7d, inside 30d. |
 
-That run also confirmed something that could not be tested locally: **Tier C works**.
-Warehouse-metadata freshness, with no `loaded_at_field` at all, returns real timestamps in
-Fusion 2.0.4 — `RAW_GUILDS` passing is the proof, since a pass requires an actual measurement.
+Plus **5 warnings of `dbt9002: timestamp type without a timezone, we will assume a UTC
+timezone`** — one per `try_to_timestamp_ntz` expression, so four Tier A fields and one Tier B
+query. Note the platform log truncates, so a run typically shows only one of these; all five are
+there.
+
+**Do not try to clear those five.** The behaviour they describe is the behaviour we want. The
+raw text carries no UTC offset, so there is nothing to read; dbt assuming UTC is deterministic.
+Casting to `timestamp_tz` instead would attach the *session* timezone, and identical data would
+then report different freshness in different environments. Chasing them buys nothing anyway —
+the command still exits non-zero on the five stale errors.
+
+### Two bugs this exercise caught
+
+Both were mine, and both are fixed. Recorded because they are the kind of thing only a real run
+finds:
+
+1. **`RAW_POTION_INGREDIENTS` `loaded_at_query` returned a date.** Fusion rejected it with
+   `dbt9002: should have a timestamp type, but got Date32`. `loaded_at_query` must return a
+   timestamp.
+2. **`RAW_POTION_INGREDIENTS` was the wrong tier.** It borrowed `RAW_POTIONS`' `INTRODUCED_AT`
+   as an event clock — but that is when a potion was *launched*, which is historical and says
+   nothing about when recipe rows arrived. The result was the child erroring on an event clock
+   while its own parent, measured by warehouse metadata, only warned: same data, two verdicts.
+   It is now Tier C like the catalog it belongs to, which is why the error count dropped from 6
+   to 5.
+
+### What the run proved that local parsing could not
+
+**Tier C works.** Warehouse-metadata freshness, with no `loaded_at_field` and no timestamp column
+of any kind, returns real timestamps on Fusion 2.0.4. `RAW_GUILDS` passing is the proof — a pass
+requires an actual measurement, not a skipped check. That matters because Tier C is the only
+option available for `RAW_INGREDIENTS`, which has no date column at all.
 
 ### No threshold can stay green on this dataset
 
