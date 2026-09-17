@@ -39,6 +39,10 @@ models:
         description: Signup date, cast from the same source text as signed_up_at.
       - name: birth_year
         description: Birth year as an integer. Null where the source text was unparseable.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
       - name: favored_discipline
         description: Favored magical discipline, lowercased.
 
@@ -62,6 +66,10 @@ models:
                 values: ['Northern Reaches', 'Ember Coast', 'Silverwood', 'The Marshlands', 'Crystal Vale']
       - name: opened_at
         description: Shop opening date, cast from source text. Null where unparseable.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
 
   - name: stg_merlinco_suppliers
     description: Cleaned supplier records, one row per supplier, with regions canonicalized.
@@ -310,6 +318,10 @@ models:
         description: Guild display name, trimmed.
       - name: founded_year
         description: Founding year as an integer. Null where the source text was unparseable.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
 
   - name: stg_merlinco_guild_memberships
     description: Cleaned membership intervals, one row per stretch of membership.
@@ -384,9 +396,16 @@ models:
         description: Brew duration in minutes as a number.
       - name: quality_check
         description: Quality check result, lowercased. Null where nothing was recorded.
+        # accepted_values cannot detect an empty value — NULL is not caught by a NOT IN check —
+        # so the emptiness claim in this model's documentation needs its own assertion. Set to
+        # warn rather than error: an unrecorded quality check is a real business condition to
+        # surface, not a reason to stop the build.
         data_tests:
           - accepted_values:
               arguments:
                 values: ['pass', 'fail']
+          - not_null:
+              config:
+                severity: warn
       - name: brewer_name
         description: Brewer name as free text. The same person may appear under several spellings.

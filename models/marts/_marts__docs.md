@@ -112,9 +112,10 @@ everything ever offered rather than everything currently for sale.
 - **Recipe cost is the cost of ingredients for one unit at today's ingredient prices.** It
   is not what the potion actually cost to brew historically, and it excludes labour and
   cauldron time.
-- **`is_regulated` can be empty** where the source system recorded something unreadable.
-  Empty means "we don't know", not "not regulated" — treating it as false will understate
-  the regulated range.
+- **`is_regulated` is reliable, but only because the source is currently clean.** The value is
+  normalized from mixed text (`Y`, `TRUE`, `1`, `no`…) and anything unrecognizable would become
+  empty, meaning "we don't know" rather than "not regulated". A test asserts there are none
+  today. If that test ever goes red, stop treating empty as false.
 - **Money appears in two currencies.** `_copper` and `_gold` describe the same price; gold
   is the reporting standard.
 
@@ -141,8 +142,9 @@ alongside sales data for that.
   wizard in one region regularly buys from a shop in another. Revenue by shop region and
   revenue by customer region are different, equally defensible numbers. Pick deliberately
   and say which one you used.
-- **`opened_at` can be empty** where the source recorded an unreadable date. Filtering on
-  it silently drops those shops along with their sales.
+- **`opened_at` is a cast from source text**, so an unreadable date arrives empty rather than
+  failing the load, and filtering on it would silently drop those shops along with their sales.
+  Not observed in the current data — a warn-level test reports it if that changes.
 
 {% enddocs %}
 
@@ -172,8 +174,9 @@ anything.
   `dim_shops`.
 - **`current_guild_count` is as of the last refresh and is 0, not empty, for non-members.**
   An average over it is pulled down by every wizard who has never joined a guild.
-- **`birth_year` can be empty** where the source recorded something unreadable, so age
-  bandings will quietly exclude those wizards.
+- **`birth_year` is a cast from source text**, so an unreadable value arrives empty and age
+  bandings would quietly exclude those wizards. Not observed in the current data — a warn-level
+  test reports it if that changes.
 
 {% enddocs %}
 
@@ -195,7 +198,8 @@ here counts guilds that exist, not guilds with members.
 
 - **A guild with no members still appears here.** Bringing membership alongside and counting
   will show it with zero, which is correct but easy to misread as missing data.
-- **`founded_year` can be empty** where the source recorded something unreadable.
+- **`founded_year` is a cast from source text**, so an unreadable value arrives empty. Not
+  observed in the current data — a warn-level test reports it if that changes.
 
 {% enddocs %}
 
@@ -237,13 +241,15 @@ neither.
 
 **Watch out for:**
 
-- **`supplier_name` can be empty** when an ingredient points at a supplier that isn't on
-  record. Those ingredients disappear from any breakdown by supplier, taking their cost
-  with them.
+- **Every ingredient currently resolves to a real supplier**, so `supplier_name` is populated
+  throughout. It is filled by a left join and *would* be empty for an ingredient pointing at a
+  supplier not on record — such ingredients would drop out of any breakdown by supplier, taking
+  their cost with them. A test asserts there are none today.
 - **`unit_cost_gold` is the current price, not the price at the time of purchase.** Any
   historical cost built from it is restated at today's prices.
-- **`is_hazardous` can be empty** where the source recorded something unreadable. Empty
-  means unknown, not safe.
+- **`is_hazardous` is populated throughout**, asserted by a test. Were it ever empty that would
+  mean unknown, not safe — so do not start reading it as a safety sign-off if that test goes
+  red.
 - **Units are not comparable across ingredients.** A pinch and a bundle both appear; adding
   quantities across different units produces a meaningless number.
 
@@ -332,8 +338,10 @@ twice.
   any potion with no recipe recorded. Those batches look free.
 - **`brewer_name` is free text from the shop system**, so the same person may appear under
   several spellings. Counting distinct brewers will overcount.
-- **Quality check results can be empty** where the source recorded nothing. Those batches
-  fall out of both the pass and fail counts.
+- **A batch with no quality check recorded would fall out of both the pass and fail counts**,
+  so the two will not always add up to the batch count. The `accepted_values` test on this
+  column cannot detect that case — an empty value passes it — so a warn-level emptiness test
+  sits alongside it to report the gap.
 
 {% enddocs %}
 

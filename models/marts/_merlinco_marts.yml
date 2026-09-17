@@ -87,7 +87,7 @@ models:
         dimension:
           type: time
       - name: birth_year
-        description: The year the wizard was born. Empty where the source recorded something unreadable.
+        description: The year the wizard was born. Cast from source text, so an unreadable value would arrive empty.
         data_type: integer
       - name: favored_discipline
         description: The branch of magic the wizard said they favour at signup.
@@ -157,7 +157,7 @@ models:
               arguments:
                 values: ['Northern Reaches', 'Ember Coast', 'Silverwood', 'The Marshlands', 'Crystal Vale']
       - name: opened_at
-        description: The day the shop opened. Empty where the source recorded an unreadable date.
+        description: The day the shop opened. Cast from source text, so an unreadable date would arrive empty.
         data_type: date
         granularity: day
         dimension:
@@ -215,7 +215,7 @@ models:
         description: How many days the potion keeps once brewed.
         data_type: integer
       - name: is_regulated
-        description: Whether the potion is subject to arcane trading regulation. Empty means unknown.
+        description: Whether the potion is subject to arcane trading regulation. Always populated today.
         data_type: boolean
         dimension:
           type: categorical
@@ -280,7 +280,7 @@ models:
         dimension:
           type: categorical
       - name: founded_year
-        description: The year the guild was founded. Empty where the source recorded something unreadable.
+        description: The year the guild was founded. Cast from source text, so an unreadable value would arrive empty.
         data_type: integer
 
   - name: dim_suppliers
@@ -370,7 +370,7 @@ models:
                 to: ref('dim_suppliers')
                 field: supplier_id
       - name: supplier_name
-        description: The supplier house's name. Empty where the ingredient points at a supplier not on record.
+        description: The supplier house's name. Populated throughout — no ingredient lacks a known supplier.
         data_type: varchar
       - name: unit
         description: The unit this ingredient is measured in. Not comparable across ingredients.
@@ -388,7 +388,7 @@ models:
         description: Current cost of one unit in gold. This is the reporting standard.
         data_type: number(18,2)
       - name: is_hazardous
-        description: Whether the ingredient needs hazardous handling. Empty means unknown, not safe.
+        description: Whether the ingredient needs hazardous handling. Always populated today; empty would mean unknown.
         data_type: boolean
         dimension:
           type: categorical
@@ -942,7 +942,7 @@ models:
         description: How long the batch took to brew, in minutes.
         data_type: number(18,4)
       - name: quality_check
-        description: Whether the batch passed inspection. Empty where nothing was recorded.
+        description: Whether the batch passed inspection. Empty if the shop recorded nothing.
         data_type: varchar
         dimension:
           type: categorical

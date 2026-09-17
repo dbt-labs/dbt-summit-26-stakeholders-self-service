@@ -95,17 +95,25 @@ missing value**. Any column described here as "empty where the source recorded s
 unreadable" is carrying that ambiguity. On a real pipeline you would test the null rate rather
 than trusting it.
 
-## Deliberate messiness in the source data
+## Messiness in the source data — absorbed, not surfaced
 
-The generator seeds realistic dirt, which is why some tests are red by design. See
-[`EXPECTED_FAILURES.md`](EXPECTED_FAILURES.md) for the list and the reasoning. Known shapes:
+The generator seeds realistic dirt in *format*, and the staging layer absorbs all of it:
 
 - Region codes arrive in mixed forms (`nr`, `Northern Reaches`, `northern reaches`) —
   canonicalized by `merlinco_normalize_region`.
 - Booleans arrive as `Y`/`no`/`TRUE`/`FALSE`/`1`/`0` — normalized by
-  `merlinco_normalize_boolean`, which returns null for anything it doesn't recognize.
-- Some ingredients reference suppliers that are not in `RAW_SUPPLIERS`.
-- Some quality checks are blank.
+  `merlinco_normalize_boolean`.
+- Every timestamp arrives as text and is cast with `try_to_*`.
+
+What it does **not** seed is broken *content*. A measured build passes all 160 data tests, all
+11 unit tests and all 9 contracts. There are no orphan foreign keys, no null booleans, and no
+referential gaps. See [`EXPECTED_FAILURES.md`](EXPECTED_FAILURES.md).
+
+This distinction caught this project out once already, so it is worth stating plainly: the
+normalizers and the `try_to_*` casts are *built* to return null on input they cannot read, and
+the unit tests prove that logic works. That is not the same as saying such input exists here. It
+does not. Documentation that claims otherwise is a false warning, which is the exact failure
+mode the lab teaches against.
 
 ## The 48-hour marketplace delay is scenario, not data
 

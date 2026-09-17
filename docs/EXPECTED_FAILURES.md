@@ -88,20 +88,79 @@ is an environment change, not a project change.
 - `dbt build` includes source freshness in Fusion, so a build on this branch hits the same
   errors. Use `--exclude-resource-type source` to get a clean model build.
 
-## Data tests: seeded messiness
+## Data tests: nothing fails
 
-The generator plants realistic dirt. These are the tests expected to catch it:
+**Measured** with `dbt build --exclude-resource-type source` against the workshop warehouse on
+Fusion 2.0.4:
 
-| Test | Why it fails | What to tell an attendee |
-|---|---|---|
-| `not_null` on `dim_ingredients.supplier_id` / `stg_merlinco_ingredients.supplier_id` | Some ingredients reference suppliers absent from `RAW_SUPPLIERS` | This is the caveat documented on `dim_ingredients.supplier_name`. The test makes the documented problem visible instead of leaving it as prose. |
-| `accepted_values` on `quality_check` | Some brew events have a blank quality check | Documented on `fct_brew_events.quality_check`. Blank falls out of both the pass and fail counts. |
-| `not_null` on `is_regulated` / `is_hazardous` | Boolean normalization returns null for unrecognized input | Documented on both columns: empty means unknown, not false. |
+| What | Result |
+|---|---|
+| Data tests (160) | **all pass** |
+| Unit tests (11) | **all pass**, including the two with run-relative membership fixtures |
+| Enforced contracts (9) | **all pass** |
+| Models | all build |
 
-**This list is unverified.** It was written from reading the models and the generator's seeded
-messiness, not from a build against the workshop warehouse — there was no warehouse connection
-available when this branch was built. Before the session, run the verification pass below and
-correct this table from the actual output.
+Two things that were flagged as risks are now closed:
+
+- **The inferred contract `data_type` values were all correct**, including every
+  aggregate-derived numeric — `lifetime_order_item_count` as `number(38,0)`,
+  `days_to_first_order` and `days_since_last_order` as `number(9,0)`, and the `*_count` columns
+  as `number(18,0)`. Those were read off the casts rather than measured, and the warehouse agreed
+  with all of them.
+- **The ~20 `not_null` tests added alongside existing `relationships` tests all pass.** There are
+  no orphan or null foreign keys anywhere in this dataset.
+
+So on this branch the only red signal is source freshness. `README.md` warns attendees that
+"some tests fail on this dataset by design" — on `main` that refers to the freshness check Lab 2
+adds. It is not true of data tests here.
+
+## Correction: the seeded messiness is absorbed, not surfaced
+
+An earlier version of this page listed three expected data-test failures — null
+`supplier_id`, blank `quality_check`, null `is_regulated` / `is_hazardous`. **That was
+speculation and it was wrong.** It had been written from reading the generator's mixed-format
+input and the normalizer macros, not from a build. A real run passed all of them.
+
+The mistake worth learning from is not the table; it is that the same speculation had been
+written into *stakeholder-facing caveats*, which is precisely the failure
+[`STAKEHOLDER_DOC_PATTERNS.md`](STAKEHOLDER_DOC_PATTERNS.md) warns about: "a plausible but false
+warning is worse than no warning — it's the same wrong-but-believable failure this lesson exists
+to prevent, just authored by you."
+
+Three caveats were provably false and are corrected:
+
+| Claim | Disproved by |
+|---|---|
+| `dim_potions.is_regulated` "can be empty" | `not_null` on `stg_merlinco_potions.is_regulated` passes |
+| `dim_ingredients.is_hazardous` "can be empty" | `not_null` on `stg_merlinco_ingredients.is_hazardous` passes |
+| `dim_ingredients.supplier_name` "can be empty when an ingredient points at a supplier not on record" | `not_null` *and* `relationships` on `stg_merlinco_ingredients.supplier_id` both pass |
+
+The normalizer macros do absorb genuinely mixed input — `merlinco_normalize_boolean` maps `Y`,
+`yes`, `TRUE`, `1`, `no`, `FALSE`, `0`; `merlinco_normalize_region` maps both codes and
+case variants. The unit tests prove the *logic* handles unrecognizable input by returning null.
+No unrecognizable input actually reaches it in this dataset. Those are different claims, and
+only the first is true.
+
+## Four open questions, answered by the next run
+
+Four caveats could not be settled by any existing test, because `accepted_values` does not catch
+an empty value — `NULL NOT IN (...)` is not true, so nulls pass silently. Rather than leave them
+as prose assertions, each now has a `not_null` test at **warn** severity:
+
+| Test | Settles |
+|---|---|
+| `not_null_stg_merlinco_brew_events_quality_check` | Are any quality checks unrecorded? |
+| `not_null_stg_merlinco_shops_opened_at` | Does any shop have an unparseable opening date? |
+| `not_null_stg_merlinco_customers_birth_year` | Any unparseable birth years? |
+| `not_null_stg_merlinco_guilds_founded_year` | Any unparseable founding years? |
+
+Warn rather than error, deliberately: an unrecorded quality check is a business condition worth
+surfacing, not a reason to stop a build, and these exist to answer a question rather than to
+enforce a rule.
+
+**On the next `dbt build`, act on the result:** a warning means the caveat is real and should be
+restored to plain language in the doc block; silence means the caveat should be deleted rather
+than left as a hypothetical. Either way the prose stops guessing.
 
 ## A local `dbt parse` does not validate the semantic manifest
 
