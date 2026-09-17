@@ -1,0 +1,65 @@
+name: dbt parse
+
+# This project's entire subject is YAML metadata, and the labs spend their time warning
+# attendees about dbt1060 (config keys at the wrong nesting level), dbt1005 (duplicate
+# definitions) and dbt1155 (a second source table entry silently discarded). All three are
+# parse-time errors, and `dbt parse` needs no warehouse credentials — so catching them in CI is
+# free.
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches: [main, solutions, production-after]
+  workflow_dispatch:
+
+jobs:
+  parse:
+    runs-on: ubuntu-latest
+    env:
+      # The dbt-cloud block in dbt_project.yml is intentionally commented out, which makes
+      # dbt1005 "Skipping semantic manifest validation" fire on every invocation. Suppressed so
+      # a real warning is never buried under an expected one.
+      DBT_ENGINE_NO_WARN_SEMANTIC_MANIFEST_VALIDATION: "1"
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # actions/checkout@v6
+
+      - name: Install dbt Fusion
+        run: |
+          curl -fsSL https://public.cdn.getdbt.com/fs/install/install.sh \
+            | sh -s -- --update
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Write a parse-only profile
+        # No warehouse is reached: `dbt parse` resolves refs, sources, configs and YAML shape
+        # without connecting. The credentials are placeholders and are never used.
+        run: |
+          mkdir -p "$HOME/.dbt"
+          cat > "$HOME/.dbt/profiles.yml" <<'PROFILE'
+          merlin-co:
+            target: ci
+            outputs:
+              ci:
+                type: snowflake
+                threads: 4
+                account: "parse-only"
+                user: "parse-only"
+                password: "parse-only"
+                database: "DBT_LEARN"
+                warehouse: "PARSE"
+                role: "PARSE"
+                schema: dbt_ci_parse_only
+          PROFILE
+
+      - name: dbt parse
+        # A clean parse with zero warnings is the bar. Attendees read these files as the
+        # reference, so a warning here is a teaching defect, not noise to scroll past.
+        run: |
+          set -o pipefail
+          dbt parse --target ci 2>&1 | tee parse.log
+          if grep -qE '^\[(warning|error)\]' parse.log; then
+            echo "::error::dbt parse emitted warnings or errors — see the log above"
+            exit 1
+          fi

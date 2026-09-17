@@ -1,5 +1,37 @@
+version: 2
+
+# Ownership, made structural rather than a comment. A group is shared across every model that
+# joins it, which is why it lives in its own file rather than inside any one model's YAML.
+#
+# Filename is `groups.yml`, no leading underscore — that is the path labs/03 tells attendees to
+# create, so the reference implementation has to match it.
+# `owner` is required — omit it and you get `missing field owner` (dbt1013).
+#
+# Grant consumption on groups, never on individuals. Offboarding is otherwise a manual
+# scavenger hunt, and every grant should trace to a role rather than a favour.
+
 groups:
   - name: commerce_analytics
+    description: >
+      Customer, order, payment and guild-membership data products. The team retail ops and
+      finance come to for revenue and customer questions.
     owner:
       name: Commerce Analytics
       email: commerce-analytics@merlinco.example
+
+  - name: supply_chain_analytics
+    description: >
+      Potion catalog, ingredients, suppliers and brewing data products. The team shop
+      operations and sourcing come to for production and cost questions.
+    owner:
+      name: Supply Chain Analytics
+      email: supply-chain-analytics@merlinco.example
+
+  - name: merlinco_platform
+    description: >
+      Staging and intermediate models. Implementation detail, not data products — nothing here
+      is offered for direct consumption, and it is hidden from the catalog by a docs config in
+      dbt_project.yml.
+    owner:
+      name: Analytics Engineering
+      email: analytics-engineering@merlinco.example

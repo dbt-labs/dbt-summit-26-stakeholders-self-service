@@ -6,12 +6,40 @@ Documentation answers questions that have already been asked well. Ownership han
 
 One row per data product that stakeholders are allowed to consume directly. If a model isn't in this table, it isn't self-service — it's just a table someone found.
 
+On `main` this table is blank — filling it in is the take-home exercise. Here on the reference
+branch it is filled in, and it is generated from the same `config.meta` that the models carry,
+which is the point: ownership that lives in the project can be audited, and ownership that lives
+in a wiki cannot.
+
 | Data product | Owning team | Support channel | Response expectation | Maturity |
 |---|---|---|---|---|
-| `fct_order_items` | | | | |
-| `dim_potions` | | | | |
-| `dim_shops` | | | | |
-| `dim_customers` | | | | |
+| `fct_customer_lifetime_value` | commerce analytics | `#commerce-analytics-support` | 2 business hours for trust incidents | `production` |
+| `fct_order_items` | commerce analytics | `#commerce-analytics-support` | 2 business hours for trust incidents | `production` |
+| `fct_orders` | commerce analytics | `#commerce-analytics-support` | 2 business hours for trust incidents | `production` |
+| `fct_customer_guild_memberships` | commerce analytics | `#commerce-analytics-support` | 2 business hours for trust incidents | `production` |
+| `dim_customers` | commerce analytics | `#commerce-analytics-support` | 2 business hours for trust incidents | `production` |
+| `dim_shops` | commerce analytics | `#commerce-analytics-support` | 2 business hours for trust incidents | `production` |
+| `dim_guilds` | commerce analytics | `#commerce-analytics-support` | 2 business hours for trust incidents | `production` |
+| `dim_potions` | supply chain analytics | `#supply-chain-analytics-support` | 2 business hours for trust incidents | `production` |
+| `dim_ingredients` | supply chain analytics | `#supply-chain-analytics-support` | 1 business day | `beta` |
+| `dim_suppliers` | supply chain analytics | `#supply-chain-analytics-support` | 1 business day | `beta` |
+| `fct_brew_events` | supply chain analytics | `#supply-chain-analytics-support` | 1 business day | `beta` |
+| `fct_payments` | commerce analytics | `#commerce-analytics-support` | 2 business hours for trust incidents | `deprecated` |
+
+The `deprecated` row is the one worth reading closely. `fct_payments` carries a
+`deprecation_date` in the project, not just a note, and its description names what to use
+instead — `fct_orders` for order-level payment questions. A deprecation with no named
+replacement and no date is just a complaint.
+
+Because this all lives in `config.meta`, the audit in week 2 of the rollout plan is a query
+rather than a survey:
+
+```sql
+-- every mart with no owner recorded
+select node_id
+from {{ ref('dim_dbt__models') }}   -- or the platform's metadata API
+where meta:owner is null
+```
 
 **Maturity** is a promise about stability, and it's the cheapest trust signal you can ship:
 

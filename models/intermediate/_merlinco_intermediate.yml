@@ -1,0 +1,71 @@
+version: 2
+
+# REFERENCE IMPLEMENTATION — the intermediate layer.
+#
+# Implementation detail, grouped to merlinco_platform and hidden from the catalog. These get a
+# model-level description and nothing more: what it computes and what one row means. That is
+# what the next engineer needs, and it is deliberately not the four-questions treatment the
+# marts get — nobody consumes these directly, so writing stakeholder prose here would be
+# maintenance cost with no reader.
+
+models:
+  - name: int_merlinco_order_items_enriched
+    description: >
+      Order lines with order and potion attributes brought alongside, and the order-level
+      discount allocated down to each line in proportion to line value. Rounding remainders are
+      pushed onto the last line of each order so the allocated shares always sum to the order
+      discount exactly. One row per order line.
+
+  - name: int_merlinco_payments_by_order
+    description: >
+      Payment attempts summarized to one row per order — attempt counts and amounts split by
+      outcome. Summarizing first is what stops the payment attempts multiplying orders when
+      brought alongside downstream.
+
+  - name: int_merlinco_order_financial_rollup
+    description: >
+      Order headers with line revenue and payment summaries brought alongside. One row per
+      order, with 0 defaults where an order has no lines or no payment attempts. This is the
+      single source of order economics for fct_orders and the customer lifetime rollup.
+
+  - name: int_merlinco_customer_lifetime_rollup
+    description: >
+      Every signed-up customer with their whole order history summarized onto one row. Counts
+      and money default to 0 for customers who never ordered, but average_order_value_gold is
+      left null for them — that inconsistency is deliberate, because a zero average would be a
+      lie, and it is documented as a caveat on fct_customer_lifetime_value. One row per
+      customer.
+
+  - name: int_merlinco_potion_recipe_costs
+    description: >
+      Recipe lines summarized to one row per potion — ingredient count, ingredient cost to brew
+      one unit at current prices, and whether any ingredient is hazardous. Potions with no
+      recipe recorded are simply absent, so downstream models default them to 0.
+
+  - name: int_merlinco_ingredients_enriched
+    description: >
+      Ingredients with their supplier's name brought alongside. Supplier name is left null
+      where an ingredient points at a supplier not on record, rather than dropping the
+      ingredient. One row per ingredient.
+
+  - name: int_merlinco_brew_events_enriched
+    description: >
+      Brewing batches with potion category and recipe cost brought alongside, plus estimated
+      batch cost and sellable units — which is 0 for any batch that failed its quality check.
+      One row per batch.
+
+  - name: int_merlinco_customer_guild_memberships
+    description: >
+      Membership intervals with a flag marking the ones running as of the last refresh. One row
+      per interval, so a customer can appear several times. The flag is recalculated on every
+      run, so a row can change from true to false without the source changing.
+
+  - name: int_merlinco_current_guild_memberships
+    description: >
+      Membership intervals filtered to only those running as of the last refresh. One row per
+      currently-active interval — still several per customer if they belong to several guilds,
+      so this is not safe to bring alongside customers without a distinct count.
+    data_tests:
+      - unique:
+          arguments:
+            column_name: "customer_id || '-' || guild_id"

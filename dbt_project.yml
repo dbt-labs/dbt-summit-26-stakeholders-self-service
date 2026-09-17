@@ -8,11 +8,21 @@ config-version: 2
 # This setting configures which "profile" dbt uses for this project.
 profile: 'merlin-co'
 
-# dbt Cloud/Platform project metadata — enables Catalog (beta) Platform enrichment
-# and dbt CLI / Mesh project resolution in the dbt VS Code Extension
+# dbt platform project metadata — enables Catalog (beta) platform enrichment
+# and dbt CLI / Mesh project resolution in the dbt VS Code Extension.
+#
+# Left commented out because this repo is run from many different accounts (the workshop
+# environment, attendees' own Snowflake, CI). Uncomment and fill in for a real project.
 # dbt-cloud:
 #   project-id: "123456"
 #   account-host: "ab123.us1.dbt.com"
+
+# Without the dbt-cloud block above, every invocation emits
+# `InvalidConfig (dbt1005): Skipping semantic manifest validation`. The semantic models and
+# metrics in this project are real and are validated in the platform; only the *local* check
+# is skipped. To silence it locally, export
+# DBT_ENGINE_NO_WARN_SEMANTIC_MANIFEST_VALIDATION=1 — the CI workflow does this, so a real
+# warning in CI is never buried under an expected one.
 
 
 # These configurations specify where dbt should look for different types of files.
@@ -41,11 +51,32 @@ clean-targets:         # directories to be removed by `dbt clean`
 # continue to be built as views. These settings can be overridden in the individual model files
 # using the `{{ config(...) }}` macro.
 
+# Layer defaults do the structural work so individual models don't repeat themselves.
+#
+# `access` and `group` are set per layer rather than per model, which makes the line between
+# data product and implementation detail a property of *where a model lives* rather than of
+# whether someone remembered. Marts opt into `access: public` individually — promotion is
+# deliberate, and the default stays `protected`.
+#
+# `docs: show: false` on staging and intermediate is how "staging and intermediate shouldn't be
+# discoverable as products at all" stops being a policy statement and starts being enforced.
 models:
   dbt_summit_26_stakeholders_self_service:
     staging:
       +materialized: view
+      +group: merlinco_platform
+      +access: protected
+      +docs:
+        show: false
+      +tags: ['layer:staging']
     intermediate:
       +materialized: view
+      +group: merlinco_platform
+      +access: protected
+      +docs:
+        show: false
+      +tags: ['layer:intermediate']
     marts:
       +materialized: table
+      +access: protected
+      +tags: ['layer:marts']

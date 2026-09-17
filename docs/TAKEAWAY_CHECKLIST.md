@@ -50,5 +50,5 @@ Measure it before you start. Everything above exists to shrink it. And if you ca
 ## Resources
 
 - Sibling Summit labs worth catching: **Standardizing insights with the dbt Semantic Layer** and **Creating context with the dbt MCP server** — both go deeper on the answer surface you saw here
-- This repo stays public after the event; the `solutions` branch has a fully worked reference implementation
+- This repo stays public after the event; the `solutions` branch has a fully worked reference implementation, with [`DATA_LIMITATIONS.md`](DATA_LIMITATIONS.md) recording where the sample data couldn't support the pattern
 - Please fill in the session survey — it decides what gets taught next year
