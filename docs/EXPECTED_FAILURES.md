@@ -162,6 +162,52 @@ enforce a rule.
 restored to plain language in the doc block; silence means the caveat should be deleted rather
 than left as a hypothetical. Either way the prose stops guessing.
 
+## Job setup: Catalog needs column schemas written explicitly
+
+If Catalog shows a data product with **Columns 0** despite the YAML documenting every column,
+the project is not the problem — the job is not producing column schemas.
+
+`dbt compile --write-index` says so directly:
+
+```
+[warning] [Generic (dbt1000)]: --write-index: column schemas will not be populated
+without `--static-analysis strict`; add `--write-lineage` to also write column-level lineage.
+```
+
+So the index is written, `dbt.node_columns` exists, and it has no column schemas in it. The
+column panel in Catalog has nothing to show.
+
+The step a job needs:
+
+```bash
+dbt compile --write-index --write-lineage --static-analysis strict
+```
+
+- `--static-analysis strict` is what populates column schemas. It needs a live warehouse
+  connection, so it cannot run in the parse-only CI in this repo.
+- `--write-lineage` additionally writes **column-level** lineage. Worth adding rather than
+  leaving off: "which report breaks if I rename this column" is a far better answer than the
+  model-level version, and lineage is a talking point in Lesson 3.
+
+Two things to know before adding it:
+
+- Strict static analysis does more work than a normal parse and can surface errors a lenient run
+  does not. That is a feature, but budget for a first run that finds something.
+- `dbt build` and `dbt source freshness` do not write the index. Catalog completeness is a
+  separate job step from building and testing, which is why a fully green build can still leave
+  Catalog looking empty.
+
+If only *some* models show zero columns rather than all of them, this is not the cause — say so
+and look at whether those models built in that environment at all.
+
+### Secondary suspect: the commented-out `dbt-cloud` block
+
+`dbt_project.yml` carries a commented `dbt-cloud:` block whose own note says it "enables Catalog
+(beta) platform enrichment". It is left commented because this repo runs from several different
+accounts. It mainly matters for local CLI and VS Code resolution rather than for a platform job,
+so check the job step above first — but if the index step is already correct and columns are
+still missing, fill in `project-id` and `account-host` and try again.
+
 ## A local `dbt parse` does not validate the semantic manifest
 
 This is the most important line on this page, and it was learned the hard way.
