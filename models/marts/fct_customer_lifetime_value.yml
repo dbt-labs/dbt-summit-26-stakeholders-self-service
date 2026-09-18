@@ -2,15 +2,41 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
-    description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
-      
+    description: >
+      One row per customer, combining signup and profile attributes with
+      lifetime order, revenue, and payment activity across all available
+      history. Use this model to analyze customer value, purchasing behavior,
+      conversion, and recency through order and shop counts, gold-denominated
+      revenue, discounts, collections, refunds, average order value, and
+      first- and last-order dates. Customers are retained even when they have
+      never placed a billable order; their count and financial measures are
+      zero, while order-date and timing fields may be null. Filter to
+      `has_ordered = true` before calculating buyer-only revenue averages or
+      similar metrics so customers who have never ordered do not understate
+      the result.
+
+    config:
+      meta:
+        grain: One row per customer (`customer_id`), including customers without billable orders.
+        intended_use:
+          - Analyze customer lifetime value and purchasing behavior across all available history.
+          - Segment customers by conversion, repeat purchasing, and order recency.
+          - Support buyer-level revenue, collection, refund, and average-order-value analysis.
+        caveats:
+          - Filter to `has_ordered = true` for buyer-only averages and aggregations.
+          - Revenue and discount measures exclude cancelled orders and are denominated in gold.
+          - Customers with only cancelled orders have `has_ordered = false`, even when order counts or dates show activity.
+          - Lifetime measures change as new orders, payments, returns, and refunds are recorded.
+
+
     columns:
 
       - name: customer_id
-        description:
+        description: Unique identifier for the customer and the primary grain of this model.
+        data_tests:
+          - not_null
+          - unique
+
       - name: signed_up_date
         description: ""
       - name: home_region
@@ -19,7 +45,8 @@ models:
         description: ""
 
       - name: first_order_date
-        description: ""              
+        description: Earliest date the customer placed an order, regardless of order status; null when the customer has no orders.
+
       - name: last_order_date
         description: ""
       - name: order_count
@@ -37,7 +64,11 @@ models:
       - name: lifetime_discount
         description: ""
       - name: lifetime_net_revenue
-        description: ""
+        description: Cumulative net revenue from the customer's non-cancelled orders across all available history, denominated in gold; zero when no orders qualify.
+        data_tests:
+          - not_null
+
+
       - name: returned_revenue
         description: ""
       - name: lifetime_collected
