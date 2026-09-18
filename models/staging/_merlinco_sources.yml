@@ -135,6 +135,11 @@ sources:
         description: Raw order headers.
         columns:
           - name: ORDER_ID
+            - config: 
+                freshness:
+                  error_after:
+                    count: 48
+                    period: hour
             description: Primary order identifier.
             data_tests:
               - not_null
