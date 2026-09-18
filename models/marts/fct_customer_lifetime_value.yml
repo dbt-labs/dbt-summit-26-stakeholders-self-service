@@ -26,10 +26,9 @@ models:
     columns:
       - name: customer_id
         description: Unique identifier for the customer and the grain of this model.
-        data_test:
+        data_tests:
           - not_null
           - unique
-          
 
       - name: signed_up_date
         description: Date the customer account was created.
@@ -84,9 +83,8 @@ models:
 
       - name: average_order_value
         description: Average net revenue in gold per non-cancelled order; null when the customer has no billable orders.
-        data_test:
+        data_tests:
           - not_null
-        
 
       - name: days_to_first_order
         description: Number of days between customer signup and the first order; null when the customer has never ordered.
