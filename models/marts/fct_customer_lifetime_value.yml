@@ -12,7 +12,39 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
-    description: '{{ doc("fct_customer_lifetime_value") }}'
+    description: |
+      Everything Merlin & Co. knows about one wizard's buying history, summarized into a single
+      row each.
+
+      **When to use it.** Lifetime spend, order counts, first and last purchase dates, and
+      repeat-buyer questions at the level of an individual customer. Good for cohort work,
+      loyalty segmentation, and "who are our best customers".
+
+      **Not** for guild questions — there is no guild or membership information here at all. For
+      those, start from `fct_customer_guild_memberships`, and read its caveats first: a wizard
+      can hold several memberships over time, so counting customers after bringing membership
+      alongside will inflate the count unless you keep only current memberships.
+
+      **Grain.** One row per wizard who has ever signed up — including the ones who have never
+      bought anything. That is roughly the whole signup list, not the buyer list.
+
+      **Watch out for:**
+
+      - **Non-buyers are in here, and they are counted.** Counting rows gives you signed-up
+        wizards, not customers who bought something. Filter on `has_ordered` first. This single
+        thing is the most common wrong-but-believable number this data produces.
+      - **Absence looks different depending on which column you read.** For a wizard who never
+        ordered, the spend columns show `0` but `average_order_value` shows nothing at all
+        (empty). So an average over the spend columns is dragged down toward zero by non-buyers,
+        while an average over `average_order_value` silently skips them. Same row, two different
+        meanings of "nothing".
+      - **"Average order value" means three different things in this project.** The column here
+        is one of them. See the column's own notes before you put it in front of anyone.
+      - **`days_since_last_order` moves on its own.** It is measured against the day the data
+        was last refreshed, so the same wizard's number changes overnight with no new purchase.
+        Never screenshot it as a fixed figure.
+      - **Returned purchases are still counted as spend** in every lifetime column except
+        `returned_revenue`, which isolates them. Cancelled purchases are excluded throughout.
     semantic_model:
       enabled: true
     # first_order_date, not signed_up_date: dim_customers is the owner of the customer's

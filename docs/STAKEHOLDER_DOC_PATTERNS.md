@@ -56,15 +56,31 @@ Check every caveat you write against the models before you publish it. A plausib
 
 ## Where it goes in dbt
 
-Put the prose in a doc block in `_<layer>__docs.md` so it lives in Markdown instead of being crammed into YAML strings, then reference it from `description`:
+Write the prose straight into `description` as a YAML literal block. Use `|`, not `>` — a folded
+scalar collapses newlines and will flatten your lists and paragraphs into one run-on line:
 
 ```yaml
 models:
   - name: fct_order_items
-    description: '{{ doc("fct_order_items") }}'
+    description: |
+      Every potion sold, one row per line on a wizard's order.
+
+      **When to use it.** Revenue and unit-volume reporting by shop, region, potion and channel.
+
+      **Not** for stock on hand. Nothing in the data answers that today.
 ```
 
 Write it once and every consumption path inherits it — the catalog, the Semantic Layer, and any AI assistant reading the project.
+
+The alternative is a doc block in `_<layer>__docs.md`, referenced as
+`description: '{{ doc("fct_order_items") }}'`. The trade-off is narrow: a doc block is worth it
+when *several* models must share identical wording, because you then edit one place. Inline
+costs you that, and buys you everything about a data product being readable in one file, which
+matters more day to day and is easier to teach from. The reference implementation on the
+`solutions` branch is inline throughout, so you can see what it looks like at scale.
+
+Pick one and standardize. Mixing them is the actual mistake — it means nobody knows where to
+look to change a description.
 
 ### The same four questions, one level down
 
