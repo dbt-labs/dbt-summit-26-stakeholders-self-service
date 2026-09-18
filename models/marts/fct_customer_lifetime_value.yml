@@ -9,7 +9,8 @@ models:
     config:
           meta: {'grain' : 'one per customer', 
                 'caveats' : 'does not include customers who have never ordered',
-                'intended_use' : 'Use this to calculate customer lifetime value.'}
+                'intended_use' : 'Use this to calculate customer lifetime value',
+                'owner' : 'commerce_analytics'}
 
     columns:
       - name: customer_id
