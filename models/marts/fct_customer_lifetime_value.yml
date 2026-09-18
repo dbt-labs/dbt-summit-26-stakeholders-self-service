@@ -11,6 +11,9 @@ models:
 
       - name: customer_id
         description:
+        data_tests:
+          - not_null
+          - unique
       - name: signed_up_date
         description: ""
       - name: home_region
@@ -38,6 +41,8 @@ models:
         description: ""
       - name: lifetime_net_revenue
         description: ""
+        data_tests:
+          - not_null
       - name: returned_revenue
         description: ""
       - name: lifetime_collected
