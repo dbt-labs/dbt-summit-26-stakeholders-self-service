@@ -3,14 +3,19 @@ version: 2
 models:
   - name: fct_customer_lifetime_value
     description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
-      
+      This model is limited to last 2 years data, and contains info such as lifetime gross revenue and lifetime revenue per clients, based on customer_id, as well as shop information (shop count for example).
+    config:
+      meta:
+        grain: ["customer_id"]
+        intended_use: "Used by the finance and analytics team for lifetime amount per customers."
+        caveats: >-
+          Includes customers who never ordered — filter on has_ordered before
+          summing or averaging revenue, or you'll understate the average across
+          real buyers.
     columns:
 
       - name: customer_id
-        description:
+        description: unique identified of the table, by customer
       - name: signed_up_date
         description: ""
       - name: home_region
@@ -19,7 +24,7 @@ models:
         description: ""
 
       - name: first_order_date
-        description: ""              
+        description: "This is the define the first date when a given customer made a order"              
       - name: last_order_date
         description: ""
       - name: order_count
@@ -33,7 +38,7 @@ models:
       - name: lifetime_order_item_count
         description: ""
       - name: lifetime_gross_revenue
-        description: ""
+        description: "this is the total gross revenue across all years for a given customer"
       - name: lifetime_discount
         description: ""
       - name: lifetime_net_revenue
