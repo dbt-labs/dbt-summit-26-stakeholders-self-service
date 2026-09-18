@@ -6,10 +6,11 @@ models:
       includes customers who never ordered — filter on has_ordered before
       summing or averaging revenue, or you'll understate the average across
       real buyers.
-    meta:
-      grain: customer
-      intended_use: get the lifetime value and order value of customers, as well as days_to_first_order, days_since_last_order, has_ordered, is_repeat_customer
-      caveats: also includes non-buying customers, so filter on has_ordered before
+    config:
+      meta:
+        grain: customer
+        intended_use: get the lifetime value and order value of customers, as well as days_to_first_order, days_since_last_order, has_ordered, is_repeat_customer
+        caveats: also includes non-buying customers, so filter on has_ordered before
       
     columns:
 
