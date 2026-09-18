@@ -1,0 +1,8 @@
+groups:
+  - name: commerce_analytics
+    description: "Where Commerce meets Analytics."
+    owner:
+      email: coman@jaffleshop.com
+    config:
+      meta:
+        data_owner: Commerce Analytics team

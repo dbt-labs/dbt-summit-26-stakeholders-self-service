@@ -1,0 +1,10 @@
+version: 2
+
+exposures:
+  - name: ltv
+    label: ltv Sales Dashboard
+    type: dashboard
+    owner:
+      name: commerce_analytics
+    depends_on:
+      - ref('fct_customer_lifetime_value')
