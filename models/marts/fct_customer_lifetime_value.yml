@@ -2,6 +2,11 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
+    config:
+      group: commerce_analytics
+      meta:
+        owner: Data Engineering Team
+
     description:
       includes customers who never ordered — filter on has_ordered before
       summing or averaging revenue, or you'll understate the average across
