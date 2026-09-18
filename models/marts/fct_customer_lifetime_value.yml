@@ -2,57 +2,67 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
-    description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
-      
+    description: >-
+      Customer-level commerce summary at one row per customer, including
+      customers who have never placed a billable order. Use `has_ordered` to
+      restrict buyer analyses; otherwise, zero-value non-buyers will understate
+      averages across actual buyers. Order dates and raw order counts include
+      cancelled orders, while billable-order and lifetime revenue metrics
+      exclude them. Monetary amounts are denominated in gold.
+    config:
+      meta:
+        grain: one row per customer
+        intended_use: no idea
+        caveats: includes customers who have never placed a billable order
     columns:
-
       - name: customer_id
-        description:
+        description: Primary identifier for the customer and the unique grain of the model.
+        data_tests:
+          - unique
+          - not_null
       - name: signed_up_date
-        description: ""
+        description: Calendar date when the customer signed up.
       - name: home_region
-        description: ""
+        description: Customer's canonical home region for geographic segmentation.
       - name: favored_discipline
-        description: ""
-
+        description: Magical discipline the customer identified as their favorite.
       - name: first_order_date
-        description: ""              
+        description: Earliest date the customer placed any order, including cancelled orders; null when no order exists.
       - name: last_order_date
-        description: ""
+        description: Most recent date the customer placed any order, including cancelled orders; null when no order exists.
       - name: order_count
-        description: ""
+        description: Total number of orders placed by the customer across all statuses, including cancelled orders.
       - name: billable_order_count
-        description: ""
+        description: Number of customer orders whose status is not cancelled.
       - name: completed_order_count
-        description: ""
+        description: Number of customer orders with a completed status.
       - name: shop_count
-        description: ""
+        description: Number of distinct shops where the customer placed an order, including orders later cancelled.
       - name: lifetime_order_item_count
-        description: ""
+        description: Total count of order-item lines across all customer orders, including cancelled orders.
       - name: lifetime_gross_revenue
-        description: ""
+        description: Gross item revenue in gold across the customer's non-cancelled orders, before discounts.
       - name: lifetime_discount
-        description: ""
+        description: Discounts allocated to the customer's non-cancelled orders, denominated in gold.
       - name: lifetime_net_revenue
-        description: ""
+        description: Net item revenue in gold across the customer's non-cancelled orders after discounts.
+        data_tests:
+          - not_null
       - name: returned_revenue
-        description: ""
+        description: Net item revenue in gold associated with the customer's returned orders.
       - name: lifetime_collected
-        description: ""
+        description: Total value in gold of the customer's successful payments across all orders.
       - name: lifetime_refunded
-        description: ""
+        description: Total value in gold of the customer's refunded payments across all orders.
       - name: lifetime_net_collected
-        description: ""
+        description: Successful payment value less refunded payment value across all customer orders, in gold.
       - name: average_order_value
-        description: ""
+        description: Lifetime net revenue divided by non-cancelled order count, in gold; null when the customer has no billable orders.
       - name: days_to_first_order
-        description: ""
+        description: Calendar days from signup to the customer's first order of any status; null when no order exists.
       - name: days_since_last_order
-        description: ""
+        description: Calendar days from the customer's most recent order of any status to the current date; null when no order exists.
       - name: has_ordered
-        description: ""
+        description: True when the customer has placed at least one non-cancelled order.
       - name: is_repeat_customer
-        description: ""
+        description: True when the customer has placed more than one non-cancelled order.

@@ -133,6 +133,11 @@ sources:
       - name: RAW_ORDERS
         identifier: RAW_ORDERS
         description: Raw order headers.
+        config:
+          freshness:
+            error_after:
+              count: 90
+              period: day
         columns:
           - name: ORDER_ID
             description: Primary order identifier.
