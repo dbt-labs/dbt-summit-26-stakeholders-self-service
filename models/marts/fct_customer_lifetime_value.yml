@@ -10,8 +10,12 @@ models:
       and collected payments. Order activity is cumulative across all available
       history and is recalculated when the model is built.
     config:
+      group: commerce_analytics
       meta:
+        owner:
+          name: Commerce Analytics
         grain: One row per customer_id, including customers with no billable orders.
+
         intended_use: >-
           Customer segmentation, cohort and retention analysis, repeat-purchase
           analysis, and comparison of lifetime order value with cash collected.
