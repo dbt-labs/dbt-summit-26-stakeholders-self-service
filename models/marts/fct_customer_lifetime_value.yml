@@ -11,14 +11,19 @@ models:
       lifetime_net_collected represents successful collections less refunds.
       Use has_ordered for buyer-only analysis—especially averages—to prevent
       zero-value non-buyers from understating customer value.
-    meta:
-      grain: One row per customer
-      intended_use: Assessing the overall customer activity
-      caveats: includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue
+    config:
+      meta:
+        grain: One row per customer
+        intended_use: Assessing the overall customer activity
+        caveats: >
+          includes customers who never ordered — filter on has_ordered before
+          summing or averaging revenue
     columns:
       - name: customer_id
         description: The unique identifier for a customer
+        data_tests:
+          - unique
+          - not_null
       - name: signed_up_date
         description: ""
       - name: home_region
@@ -46,6 +51,8 @@ models:
         description: ""
       - name: lifetime_net_revenue
         description: The total, aggregate net revenue across all orders
+        data_tests:
+          - not_null
       - name: returned_revenue
         description: ""
       - name: lifetime_collected
