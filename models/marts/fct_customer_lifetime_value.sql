@@ -21,5 +21,6 @@ select
     days_to_first_order,
     days_since_last_order,
     has_ordered,
-    is_repeat_customer
+    is_repeat_customer,
+    lifetime_net_revenue_gold as lifetime_value
 from {{ ref('int_merlinco_customer_lifetime_rollup') }}
