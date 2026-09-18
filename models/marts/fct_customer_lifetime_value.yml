@@ -20,6 +20,10 @@ models:
           `returned_revenue`.
         owner: commerce_analytics
 
+      access: protected
+      contract: 
+        enforced: true
+
     columns:
 
       - name: customer_id
