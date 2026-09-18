@@ -31,6 +31,10 @@ models:
         description: >-
           Stable identifier for the customer and the unique key at this model's
           one-row-per-customer grain.
+        data_tests:
+          - not_null
+          - unique
+
       - name: signed_up_date
         description: >-
           Calendar date the customer signed up. Use this field as the customer
@@ -67,6 +71,9 @@ models:
           non-cancelled orders. This measure includes returned and still-open orders
           and does not subtract payment refunds; use lifetime_net_collected when the
           analysis requires realized cash after refunds.
+        data_tests:
+          - not_null
+
       - name: returned_revenue
         description: ""
       - name: lifetime_collected
