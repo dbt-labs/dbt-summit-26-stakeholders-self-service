@@ -33,6 +33,9 @@ models:
     columns:
       - name: customer_id
         description: Unique identifier for the customer and the grain of this model.
+        data_tests:
+          - unique
+          - not_null
 
       - name: signed_up_date
         description: Calendar date on which the customer signed up.
@@ -72,6 +75,8 @@ models:
 
       - name: lifetime_net_revenue
         description: Lifetime net revenue in gold from non-cancelled orders after discounts.
+        data_tests:
+          - not_null
 
       - name: returned_revenue
         description: Net revenue in gold associated with orders whose current status is `returned`.
