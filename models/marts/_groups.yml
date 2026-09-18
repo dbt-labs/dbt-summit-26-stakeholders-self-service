@@ -1,0 +1,7 @@
+version: 2
+
+groups:
+  - name: alab_data_engineering
+    description: "Models owned and maintained by ALAB - Data Engineering."
+    owner:
+      name: "ALAB - Data Engineering"

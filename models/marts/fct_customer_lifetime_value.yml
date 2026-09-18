@@ -2,15 +2,19 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
-    description:
-      The order's current status (pending, paid, shipped, delivered, or cancelled), synced live from the source system.
-      Reflects the current status only. It doesn't keep a history of past changes.
+    description: >-
+      Customer lifetime value mart at one row per customer, including customers who have never ordered.
+      Summarizes order activity, revenue, collections, and refunds across each customer's full available
+      history. Filter to `has_ordered` when calculating averages for purchasing customers; otherwise,
+      customers with no billable orders contribute zero lifetime value.
 
     config:
+      group: alab_data_engineering
       meta:
         grain: one row per customer
         intended_use: "cohort and retention analysis"
         caveats: "excludes orders refunded under 30 days"
+
         
 
     columns:
@@ -22,45 +26,46 @@ models:
       - name: signed_up_date
         description: "Date originally signed up to be a part of the system."
       - name: home_region
-        description: ""
+        description: "Customer's canonical home region at the time the model was last built."
       - name: favored_discipline
-        description: ""
+        description: "Magical discipline the customer has identified as their preferred discipline."
 
       - name: first_order_date
-        description: ""
+        description: "Date of the customer's earliest order in the available order history; null when the customer has never ordered."
       - name: last_order_date
-        description: ""
+        description: "Date of the customer's most recent order in the available order history; null when the customer has never ordered."
       - name: order_count
-        description: ""
+        description: "Total number of orders associated with the customer, including cancelled and returned orders."
       - name: billable_order_count
-        description: ""
+        description: "Number of customer orders whose current status is not `cancelled`. Used as the denominator for average order value."
       - name: completed_order_count
-        description: ""
+        description: "Number of customer orders whose current status is `completed`."
       - name: shop_count
-        description: ""
+        description: "Number of distinct shops from which the customer has placed an order."
       - name: lifetime_order_item_count
-        description: ""
+        description: "Total count of order-item rows across all of the customer's orders."
       - name: lifetime_gross_revenue
-        description: ""
+        description: "Cumulative gold-denominated gross revenue from the customer's non-cancelled orders, before discounts."
       - name: lifetime_discount
-        description: ""
+        description: "Cumulative gold-denominated discount amount applied to the customer's non-cancelled orders."
       - name: lifetime_net_revenue
-        description: ""
+        description: "Cumulative gold-denominated net revenue from the customer's non-cancelled orders after discounts. This is the primary realized customer lifetime value measure in this mart."
       - name: returned_revenue
-        description: ""
+        description: "Cumulative gold-denominated net revenue associated with orders whose current status is `returned`."
       - name: lifetime_collected
-        description: ""
+        description: "Cumulative gold-denominated value of successful payments collected from the customer."
       - name: lifetime_refunded
-        description: ""
+        description: "Cumulative gold-denominated value of payments refunded to the customer."
       - name: lifetime_net_collected
-        description: ""
+        description: "Cumulative successful payment value less cumulative refunded payment value, denominated in gold."
       - name: average_order_value
-        description: ""
+        description: "Customer lifetime net revenue divided by the number of non-cancelled orders; null when the customer has no billable orders."
       - name: days_to_first_order
-        description: ""
+        description: "Calendar days between customer signup and the first order; null when the customer has never ordered."
       - name: days_since_last_order
-        description: ""
+        description: "Calendar days from the customer's most recent order through the date the model is built; null when the customer has never ordered."
       - name: has_ordered
-        description: ""
+        description: "True when the customer has at least one order whose current status is not `cancelled`."
       - name: is_repeat_customer
-        description: ""
+        description: "True when the customer has more than one order whose current status is not `cancelled`."
+
