@@ -3,10 +3,6 @@ version: 2
 models:
   - name: fct_customer_lifetime_value
     description: "table showing lifetime order values per customer"
-    config:
-      meta:
-        owner: Commerce Analytics
-      group: commerce_analytics
     columns:
 
       - name: customer_id
@@ -79,3 +75,5 @@ models:
         grain: "one row per customer"
         intended_use: "to determine lifetime order values for each customer"
         caveats: "includes customers who never ordered — filter on has_ordered before summing or averaging revenue, or you'll understate the average across real buyers."
+        owner: Commerce Analytics
+      group: commerce_analytics
