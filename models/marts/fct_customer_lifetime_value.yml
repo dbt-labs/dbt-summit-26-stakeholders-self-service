@@ -7,65 +7,92 @@ models:
       summing or averaging revenue, or you'll understate the average across
       real buyers.
     config:
-          meta: {'grain' : 'one per customer', 
-                'caveats' : 'does not include customers who have never ordered',
-                'intended_use' : 'Use this to calculate customer lifetime value',
-                'owner' : 'commerce_analytics'}
+      group: commerce_analytics
+      access: protected
+      contract:
+        enforced: true
+      meta: {'grain' : 'one per customer',
+             'caveats' : 'does not include customers who have never ordered',
+             'intended_use' : 'Use this to calculate customer lifetime value',
+             'owner' : 'commerce_analytics'}
 
     columns:
       - name: customer_id
+        data_type: text
         description: Unique identifier for customer.
         data_tests:
           - not_null
           - unique
       - name: signed_up_date
+        data_type: date
         description: ""
       - name: home_region
+        data_type: text
         description: ""
       - name: favored_discipline
+        data_type: text
         description: ""
 
       - name: first_order_date
+        data_type: date
         description: "Date of customer's first order."
         config:
           meta: {'intended_use' : 'identify first date of order for the customer specified by customer_id'}
       - name: last_order_date
+        data_type: date
         description: ""
       - name: order_count
+        data_type: number
         description: ""
       - name: billable_order_count
+        data_type: number
         description: ""
       - name: completed_order_count
+        data_type: number
         description: ""
       - name: shop_count
+        data_type: number
         description: ""
       - name: lifetime_order_item_count
+        data_type: number
         description: ""
       - name: lifetime_gross_revenue
+        data_type: number
         description: ""
       - name: lifetime_discount
+        data_type: number
         description: ""
       - name: lifetime_net_revenue
+        data_type: number
         description: "Customer value"
         data_tests:
           - not_null
         config:
           meta: {'intended_use' : 'Sum to calculate customer lifetime value'}
       - name: returned_revenue
+        data_type: number
         description: ""
       - name: lifetime_collected
+        data_type: number
         description: ""
       - name: lifetime_refunded
+        data_type: number
         description: ""
       - name: lifetime_net_collected
+        data_type: number
         description: ""
       - name: average_order_value
+        data_type: number
         description: ""
       - name: days_to_first_order
+        data_type: number
         description: ""
       - name: days_since_last_order
+        data_type: number
         description: ""
       - name: has_ordered
+        data_type: boolean
         description: ""
       - name: is_repeat_customer
+        data_type: boolean
         description: ""
