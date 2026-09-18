@@ -2,15 +2,17 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
-    description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
+    description: "table showing lifetime order values per customer"
+    meta:
+      grain: "one row per customer"
+      intended_use: "to determine lifetime order values for each customer"
+      caveats:
+      includes customers who never ordered — filter on has_ordered before summing or averaging revenue, or you'll understate the average across real buyers.
       
     columns:
 
       - name: customer_id
-        description:
+        description: "unique id for each individual customer"
       - name: signed_up_date
         description: ""
       - name: home_region
@@ -19,7 +21,7 @@ models:
         description: ""
 
       - name: first_order_date
-        description: ""              
+        description: "first date that a customer ordered a product in their lifetime"              
       - name: last_order_date
         description: ""
       - name: order_count
@@ -47,7 +49,7 @@ models:
       - name: lifetime_net_collected
         description: ""
       - name: average_order_value
-        description: ""
+        description: "average value in dollars for a customers orders across their lifetime"
       - name: days_to_first_order
         description: ""
       - name: days_since_last_order
