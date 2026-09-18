@@ -13,7 +13,7 @@ models:
 
       - name: customer_id
         description:  "unique identifier for customer"
-        data tests:
+        data_tests:
             - not_null
             - unique
             
