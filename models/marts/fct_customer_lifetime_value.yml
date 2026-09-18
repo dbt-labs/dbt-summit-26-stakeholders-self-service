@@ -12,6 +12,7 @@ models:
       Use has_ordered for buyer-only analysis—especially averages—to prevent
       zero-value non-buyers from understating customer value.
     config:
+      group: commerce_analytics
       meta:
         grain: One row per customer
         intended_use: Assessing the overall customer activity
@@ -23,7 +24,6 @@ models:
           name: Commerce Analytics
         support_channel: '#commerce-analytics-support'
         response_sla: '2 business hours for trust incidents'
-      group: commerce_analytics
     columns:
       - name: customer_id
         description: The unique identifier for a customer
