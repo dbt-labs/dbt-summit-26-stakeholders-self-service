@@ -2,15 +2,18 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
-    description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
-      
+    description: |
+      This is for my GDO Lead.
+    config:
+      meta:
+        grain: Test
     columns:
 
       - name: customer_id
-        description:
+        description: Customer
+        data_tests:
+          - not_null
+          - unique
       - name: signed_up_date
         description: ""
       - name: home_region
