@@ -15,6 +15,9 @@ models:
 
       - name: customer_id
         description: The unique id of the customer
+        data_tests:
+          - unique
+          - not_null
       - name: signed_up_date
         description: ""
       - name: home_region
