@@ -3,14 +3,20 @@ version: 2
 models:
   - name: fct_customer_lifetime_value
     description:
-      includes customers who never ordered — filter on has_ordered before
+      Customer lifteime value, one row per customer. Includes customers who never ordered — filter on has_ordered before
       summing or averaging revenue, or you'll understate the average across
       real buyers.
-      
-    columns:
+    config:
+          meta: {'grain' : 'one per customer', 
+                'caveats' : 'does not include customers who have never ordered',
+                'intended_use' : 'Use this to calculate customer lifetime value.'}
 
+    columns:
       - name: customer_id
-        description:
+        description: Unique identifier for customer.
+        data_tests:
+          - not_null
+          - unique
       - name: signed_up_date
         description: ""
       - name: home_region
@@ -19,7 +25,9 @@ models:
         description: ""
 
       - name: first_order_date
-        description: ""              
+        description: "Date of customer's first order."
+        config:
+          meta: {'intended_use' : 'identify first date of order for the customer specified by customer_id'}
       - name: last_order_date
         description: ""
       - name: order_count
@@ -37,7 +45,11 @@ models:
       - name: lifetime_discount
         description: ""
       - name: lifetime_net_revenue
-        description: ""
+        description: "Customer value"
+        data_tests:
+          - not_null
+        config:
+          meta: {'intended_use' : 'Sum to calculate customer lifetime value'}
       - name: returned_revenue
         description: ""
       - name: lifetime_collected
