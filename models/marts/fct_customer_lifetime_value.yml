@@ -9,6 +9,8 @@ models:
       expressed in gold and summarize activity across the customer's full
       available history.
     config:
+      group: commerce_analytics
+
       meta:
         grain: One row per customer (`customer_id`).
         intended_use:

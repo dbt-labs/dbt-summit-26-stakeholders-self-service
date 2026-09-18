@@ -1,0 +1,10 @@
+groups:
+  - name: commerce_analytics
+    owner:
+      name: Commerce Analytics
+    config:
+      meta:
+        owner_role: commerce_analytics
+        users:
+          - Jeff
+          - Will

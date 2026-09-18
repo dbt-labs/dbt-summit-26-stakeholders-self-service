@@ -1,0 +1,7 @@
+exposures:
+  - name: customer_ltv_dashboard
+    type: dashboard
+    depends_on:
+      - ref('fct_customer_lifetime_value')
+    owner:
+      name: Commerce Analytics
