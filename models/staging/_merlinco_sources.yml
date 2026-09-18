@@ -18,6 +18,14 @@ sources:
       - name: RAW_CUSTOMERS
         identifier: RAW_CUSTOMERS
         description: Raw customer records.
+        config:
+          freshness:
+            warn_after:
+              count: 5
+              period: day
+            error_after:
+              count: 10
+              period: day
         columns:
           - name: CUSTOMER_ID
             description: Primary customer identifier.
@@ -133,6 +141,15 @@ sources:
       - name: RAW_ORDERS
         identifier: RAW_ORDERS
         description: Raw order headers.
+        config:
+          freshness:
+            warn_after:
+              count: 5
+              period: day
+            error_after:
+              count: 10
+              period: day
+          loaded_at_field: "try_to_timestamp_ntz(ORDERED_AT)"
         columns:
           - name: ORDER_ID
             description: Primary order identifier.
