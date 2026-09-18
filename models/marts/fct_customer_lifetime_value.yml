@@ -11,6 +11,8 @@ models:
 
     config:
       meta:
+        owner:
+          name: Commerce Analytics
         grain: One row per customer.
         intended_use: >-
           Customer-level lifetime value analysis, buyer segmentation, retention
