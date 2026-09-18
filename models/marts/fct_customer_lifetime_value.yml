@@ -2,24 +2,45 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
-    description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
+    description: >
+      Customer lifetime value mart at one row per customer. Includes customers
+      who have never placed a billable order; use has_ordered when calculating
+      metrics specifically for customers who have purchased.
+    config:
+      meta:
+        granularity: One row per customer.
+        intended_use: >
+          Customer lifetime value analysis, customer segmentation, cohort
+          analysis, and comparisons of purchasing behavior and revenue across
+          customer groups.
+        caveats:
+          - >
+            Customers who have never placed a billable order are included with
+            zero lifetime revenue. Filter on has_ordered when calculating
+            averages across purchasing customers.
+          - >
+            Revenue fields exclude cancelled orders, while first_order_date,
+            last_order_date, order_count, shop_count, and
+            lifetime_order_item_count include orders regardless of status.
+          - >
+            Lifetime values are cumulative through the model's latest build and
+            should not be interpreted as point-in-time historical values.
+          - >
+            Monetary values are denominated in gold.
       
     columns:
-
       - name: customer_id
-        description:
+        description: " Primary identifier for the customer and the grain of this model."
+        granularity: 
       - name: signed_up_date
         description: ""
       - name: home_region
         description: ""
       - name: favored_discipline
         description: ""
-
       - name: first_order_date
-        description: ""              
+        description: "Date of the customer's first recorded order, regardless of order status.
+          Null when the customer has never placed an order."              
       - name: last_order_date
         description: ""
       - name: order_count
