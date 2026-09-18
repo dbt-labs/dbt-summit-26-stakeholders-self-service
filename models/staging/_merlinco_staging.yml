@@ -1,96 +1,175 @@
 version: 2
 
+# REFERENCE IMPLEMENTATION — the staging layer.
+#
+# Staging is implementation detail, not a data product. It is grouped to merlinco_platform,
+# left at the `protected` default, and hidden from the catalog by a `docs: show: false` config
+# in dbt_project.yml — because "staging and intermediate shouldn't be discoverable as products
+# at all" is a policy the project should enforce rather than merely assert.
+#
+# Columns are still fully described. A hidden model is not an undocumented one: these
+# descriptions are what the next engineer reads, and what an AI assistant reads when it is
+# asked why a mart column looks the way it does.
+#
+# Every foreign key carries `not_null` alongside its `relationships` test. A relationships
+# test passes happily on an empty value, so on its own it only half-covers the key.
+
 models:
   - name: stg_merlinco_customers
-    description: Cleaned customer records with canonical home regions.
+    description: Cleaned customer records, one row per customer, with home regions canonicalized.
     columns:
       - name: customer_id
-        description: Primary customer identifier.
+        description: Primary customer identifier, trimmed and emptied if blank.
         data_tests:
           - not_null
           - unique
+      - name: full_name
+        description: Customer display name, trimmed.
+      - name: email
+        description: Customer email address, lowercased and trimmed.
       - name: home_region
-        description: Canonical customer home region.
+        description: Customer home region mapped to one of the five canonical names.
         data_tests:
           - accepted_values:
               arguments:
                 values: ['Northern Reaches', 'Ember Coast', 'Silverwood', 'The Marshlands', 'Crystal Vale']
+      - name: signed_up_at
+        description: Signup timestamp, cast from source text. Null where the source text was unparseable.
+      - name: signed_up_date
+        description: Signup date, cast from the same source text as signed_up_at.
+      - name: birth_year
+        description: Birth year as an integer. Null where the source text was unparseable.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: favored_discipline
+        description: Favored magical discipline, lowercased.
+
   - name: stg_merlinco_shops
-    description: Cleaned shop locations.
+    description: Cleaned shop locations, one row per shop, with regions canonicalized.
     columns:
       - name: shop_id
-        description: Primary shop identifier.
+        description: Primary shop identifier, trimmed.
         data_tests:
           - not_null
           - unique
+      - name: shop_name
+        description: Shop name, trimmed.
+      - name: city
+        description: Shop city, trimmed.
       - name: region
-        description: Canonical shop region.
+        description: Shop region mapped to one of the five canonical names.
         data_tests:
           - accepted_values:
               arguments:
                 values: ['Northern Reaches', 'Ember Coast', 'Silverwood', 'The Marshlands', 'Crystal Vale']
+      - name: opened_at
+        description: Shop opening date, cast from source text. Null where unparseable.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+
   - name: stg_merlinco_suppliers
-    description: Cleaned supplier records.
+    description: Cleaned supplier records, one row per supplier, with regions canonicalized.
     columns:
       - name: supplier_id
-        description: Primary supplier identifier.
+        description: Primary supplier identifier, trimmed.
         data_tests:
           - not_null
           - unique
+      - name: supplier_name
+        description: Supplier trading name, trimmed.
       - name: region
-        description: Canonical supplier region.
+        description: Supplier region mapped to one of the five canonical names.
         data_tests:
           - accepted_values:
               arguments:
                 values: ['Northern Reaches', 'Ember Coast', 'Silverwood', 'The Marshlands', 'Crystal Vale']
+      - name: reliability_rating
+        description: Sourcing reliability score as a number. No documented scale in the source system.
+      - name: contracted_since
+        description: Contract start date, cast from source text.
+
   - name: stg_merlinco_ingredients
-    description: Cleaned ingredient catalog with costs converted to gold.
+    description: Cleaned ingredient catalog, one row per ingredient, with costs converted to gold.
     columns:
       - name: ingredient_id
-        description: Primary ingredient identifier.
+        description: Primary ingredient identifier, trimmed.
         data_tests:
           - not_null
           - unique
+      - name: ingredient_name
+        description: Ingredient name, trimmed.
       - name: supplier_id
-        description: Supplier identifier.
+        description: Supplying supplier identifier.
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('stg_merlinco_suppliers')
                 field: supplier_id
       - name: unit
-        description: Lowercase ingredient unit.
+        description: Ingredient unit of measure, lowercased. Not comparable across ingredients.
         data_tests:
           - accepted_values:
               arguments:
                 values: ['pinch', 'sprig', 'bundle', 'gram', 'dram', 'vial']
+      - name: unit_cost_copper
+        description: Unit cost in copper coins as a number.
+      - name: unit_cost_gold
+        description: Unit cost converted to gold at 100 copper to 1 gold.
       - name: is_hazardous
-        description: Normalized hazardous boolean flag.
+        description: Hazardous handling flag, normalized from the source's mixed truthy strings.
         data_tests:
           - not_null
+      - name: harvest_season
+        description: Harvest season, lowercased.
+
   - name: stg_merlinco_potions
-    description: Cleaned potion catalog with prices converted to gold.
+    description: Cleaned potion catalog, one row per SKU, with prices converted to gold.
     columns:
       - name: potion_sku
-        description: Primary potion SKU.
+        description: Primary potion SKU, trimmed.
         data_tests:
           - not_null
           - unique
+      - name: potion_name
+        description: Potion name, trimmed.
       - name: category
-        description: Lowercase potion category.
+        description: Potion category, lowercased.
         data_tests:
           - accepted_values:
               arguments:
                 values: ['love', 'clarity', 'healing', 'invisibility', 'luck', 'strength']
+      - name: base_price_copper
+        description: List price in copper coins as a number.
+      - name: base_price_gold
+        description: List price converted to gold at 100 copper to 1 gold.
+      - name: potency
+        description: Potency rating as a number.
+      - name: shelf_life_days
+        description: Shelf life in days as an integer.
       - name: is_regulated
-        description: Normalized regulated boolean flag.
+        description: Regulated-substance flag, normalized from the source's mixed truthy strings.
         data_tests:
           - not_null
+      - name: introduced_at
+        description: Catalog introduction date, cast from source text.
+
   - name: stg_merlinco_potion_ingredients
-    description: Cleaned potion recipe bridge.
+    description: Cleaned potion recipe bridge, one row per potion and ingredient pair.
+    data_tests:
+      # The grain is the pair, which no single-column `unique` can express. An expression
+      # works without any test package installed, and it says the grain declaratively rather
+      # than leaving it to the singular test in tests/singular/.
+      - unique:
+          arguments:
+            column_name: "potion_sku || '-' || ingredient_id"
     columns:
       - name: potion_sku
-        description: Potion SKU.
+        description: Potion SKU this recipe line belongs to.
         data_tests:
           - not_null
           - relationships:
@@ -98,163 +177,235 @@ models:
                 to: ref('stg_merlinco_potions')
                 field: potion_sku
       - name: ingredient_id
-        description: Ingredient identifier.
+        description: Ingredient called for by this recipe line.
         data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('stg_merlinco_ingredients')
                 field: ingredient_id
+      - name: ingredient_quantity
+        description: Quantity of the ingredient the recipe calls for, in the unit below.
       - name: unit
-        description: Lowercase recipe unit.
+        description: Recipe unit of measure, lowercased.
         data_tests:
           - accepted_values:
               arguments:
                 values: ['pinch', 'sprig', 'bundle', 'gram', 'dram', 'vial']
+
   - name: stg_merlinco_orders
-    description: Cleaned order headers.
+    description: Cleaned order headers, one row per order, with discounts converted to gold.
     columns:
       - name: order_id
-        description: Primary order identifier.
+        description: Primary order identifier, trimmed.
         data_tests:
           - not_null
           - unique
       - name: customer_id
-        description: Customer identifier.
+        description: Ordering customer identifier.
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('stg_merlinco_customers')
                 field: customer_id
       - name: shop_id
-        description: Shop identifier.
+        description: Shop the order was placed at.
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('stg_merlinco_shops')
                 field: shop_id
+      - name: ordered_at
+        description: Order timestamp, cast from source text. Null where unparseable.
+      - name: ordered_date
+        description: Order date, cast from the same source text as ordered_at.
       - name: order_status
-        description: Lowercase order status.
+        description: Order status, lowercased. Pinned to four values by the test below.
         data_tests:
           - accepted_values:
               arguments:
                 values: ['completed', 'returned', 'cancelled', 'placed']
       - name: order_channel
-        description: Lowercase order channel.
+        description: Sales channel, lowercased. Marketplace orders arrive up to 48 hours late.
         data_tests:
           - accepted_values:
               arguments:
                 values: ['in_store', 'courier_owl', 'marketplace']
+      - name: discount_copper
+        description: Order-level discount in copper coins, defaulted to 0 when absent.
+      - name: discount_gold
+        description: Order-level discount in gold, defaulted to 0 when absent.
+
   - name: stg_merlinco_order_items
-    description: Cleaned order item lines.
+    description: Cleaned order item lines, one row per line, with prices converted to gold.
     columns:
       - name: order_item_id
-        description: Primary order item identifier.
+        description: Primary order item identifier, trimmed.
         data_tests:
           - not_null
           - unique
       - name: order_id
-        description: Order identifier.
+        description: Order this line belongs to.
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('stg_merlinco_orders')
                 field: order_id
       - name: potion_sku
-        description: Potion SKU.
+        description: Potion sold on this line.
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('stg_merlinco_potions')
                 field: potion_sku
+      - name: quantity
+        description: Units of the potion on this line. Carries decimals — do not assume integers.
+      - name: unit_price_copper
+        description: Price per unit in copper coins as a number.
+      - name: unit_price_gold
+        description: Price per unit converted to gold at 100 copper to 1 gold.
+
   - name: stg_merlinco_payments
-    description: Cleaned payment attempts.
+    description: Cleaned payment attempts, one row per attempt, with amounts converted to gold.
     columns:
       - name: payment_id
-        description: Primary payment identifier.
+        description: Primary payment attempt identifier, trimmed.
         data_tests:
           - not_null
           - unique
       - name: order_id
-        description: Order identifier.
+        description: Order the attempt was made against.
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('stg_merlinco_orders')
                 field: order_id
       - name: payment_method
-        description: Lowercase payment method.
+        description: Payment method, lowercased.
         data_tests:
           - accepted_values:
               arguments:
                 values: ['coin', 'guild_credit', 'crystal_transfer', 'barter']
+      - name: amount_copper
+        description: Attempted amount in copper coins as a number.
+      - name: amount_gold
+        description: Attempted amount converted to gold at 100 copper to 1 gold.
       - name: payment_status
-        description: Lowercase payment status.
+        description: Outcome of the attempt, lowercased. Refunds are positive amounts.
         data_tests:
           - accepted_values:
               arguments:
                 values: ['success', 'failed', 'refunded']
+      - name: paid_at
+        description: Attempt timestamp, cast from source text.
+      - name: paid_date
+        description: Attempt date, cast from the same source text as paid_at.
+
   - name: stg_merlinco_guilds
-    description: Cleaned guild dimension.
+    description: Cleaned guild dimension, one row per guild.
     columns:
       - name: guild_id
-        description: Primary guild identifier.
+        description: Primary guild identifier, trimmed.
         data_tests:
           - not_null
           - unique
+      - name: guild_name
+        description: Guild display name, trimmed.
+      - name: founded_year
+        description: Founding year as an integer. Null where the source text was unparseable.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+
   - name: stg_merlinco_guild_memberships
-    description: Cleaned customer guild membership intervals.
+    description: Cleaned membership intervals, one row per stretch of membership.
     columns:
       - name: membership_id
-        description: Primary membership identifier.
+        description: Primary membership identifier, trimmed.
         data_tests:
           - not_null
           - unique
       - name: customer_id
-        description: Customer identifier.
+        description: Customer holding the membership.
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('stg_merlinco_customers')
                 field: customer_id
       - name: guild_id
-        description: Guild identifier.
+        description: Guild the membership is with.
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('stg_merlinco_guilds')
                 field: guild_id
       - name: membership_tier
-        description: Lowercase membership tier.
+        description: Tier held during this interval, lowercased. Not the member's current tier.
         data_tests:
           - accepted_values:
               arguments:
                 values: ['apprentice', 'adept', 'archmage']
+      - name: valid_from
+        description: Interval start date, cast from source text.
+        data_tests:
+          - not_null
+      - name: valid_to
+        description: Interval end date. Null means the membership is still open, not missing.
+
   - name: stg_merlinco_brew_events
-    description: Cleaned potion production events.
+    description: Cleaned production events, one row per brewing batch.
     columns:
       - name: brew_id
-        description: Primary brew event identifier.
+        description: Primary brew event identifier, trimmed.
         data_tests:
           - not_null
           - unique
       - name: potion_sku
-        description: Potion SKU.
+        description: Potion that was brewed.
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('stg_merlinco_potions')
                 field: potion_sku
       - name: shop_id
-        description: Shop identifier.
+        description: Shop that brewed the batch.
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('stg_merlinco_shops')
                 field: shop_id
+      - name: cauldron_id
+        description: Cauldron used, trimmed.
+      - name: brewed_at
+        description: Brew completion timestamp, cast from source text.
+      - name: brewed_date
+        description: Brew completion date, cast from the same source text as brewed_at.
+      - name: batch_size
+        description: Units produced before quality checking.
+      - name: brew_duration_minutes
+        description: Brew duration in minutes as a number.
       - name: quality_check
-        description: Lowercase quality check result.
+        description: Quality check result, lowercased. Null where nothing was recorded.
+        # accepted_values cannot detect an empty value — NULL is not caught by a NOT IN check —
+        # so the emptiness claim in this model's documentation needs its own assertion. Set to
+        # warn rather than error: an unrecorded quality check is a real business condition to
+        # surface, not a reason to stop the build.
         data_tests:
           - accepted_values:
               arguments:
                 values: ['pass', 'fail']
+          - not_null:
+              config:
+                severity: warn
+      - name: brewer_name
+        description: Brewer name as free text. The same person may appear under several spellings.

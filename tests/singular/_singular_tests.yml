@@ -1,0 +1,49 @@
+version: 2
+
+# Descriptions on singular tests. Without these they appear in the catalog as a bare file name,
+# which tells a consumer that *something* is being checked but not what — and an unexplained
+# failing test is worse than no test, because nobody can judge whether it affects their number.
+
+data_tests:
+  - name: no_duplicate_merlinco_recipe_rows
+    description: >
+      Asserts no potion lists the same ingredient twice. A duplicate would silently double that
+      ingredient's cost in every recipe cost and estimated batch cost downstream.
+
+  - name: no_invalid_merlinco_membership_intervals
+    description: >
+      Asserts no membership ends before it began. An inverted interval would make the
+      is_current_membership flag unreliable, which is the flag every guild question depends on.
+
+  - name: no_negative_merlinco_amounts
+    description: >
+      Asserts that quantities, revenue, payment amounts and brewing costs are never negative
+      across the order, order line, payment and brewing data products. This is the business
+      assumption that cannot be written as a generic test — "greater than zero" needs SQL.
+
+  - name: no_orphaned_merlinco_marts
+    description: >
+      Asserts every order points at a real customer, every line at a real order, every payment
+      at a real order, and every batch at a real potion. Catches the fan-out and drop-out that
+      relationships tests on individual columns can miss once models are combined.
+
+  - name: order_net_equals_gross_minus_discount
+    description: >
+      Asserts that for every order, revenue after discount equals revenue before discount minus
+      the discount, within a copper. This is the guard on the line-level discount allocation —
+      if the rounding remainder logic drifts, this catches it.
+
+  - name: order_items_have_positive_unit_price
+    description: >
+      Asserts every order line has a unit price above zero and a quantity above zero. A zero or
+      negative price would understate revenue while looking like a legitimate free item.
+
+  - name: clv_net_revenue_not_above_gross
+    description: >
+      Asserts no customer's lifetime revenue after discount exceeds their revenue before it.
+      Guards the discount aggregation in the customer rollup.
+
+  - name: clv_first_order_not_before_signup
+    description: >
+      Asserts no customer's first purchase predates their signup date. Catches timestamp casting
+      problems and backdated records, either of which would break cohort analysis silently.

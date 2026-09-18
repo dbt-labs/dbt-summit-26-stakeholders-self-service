@@ -1,174 +1,365 @@
 version: 2
 
-# The Lab 1 target is fct_customer_lifetime_value, which has its own file:
-# models/marts/fct_customer_lifetime_value.yml. Everyone documents that one model,
-# so tables can compare their prose line by line.
+# REFERENCE IMPLEMENTATION — the marts layer as a set of data products.
 #
-# The models wired to doc blocks in _marts__docs.md — fct_order_items, dim_potions,
-# dim_shops, dim_customers — are the same developer-grade "before" state: accurate,
-# and useless to a stakeholder. Worked examples in the lesson, stretch targets for
-# anyone who finishes Lab 1 early.
+# Conventions this file follows, and why:
 #
-#   Lab 1 (Lesson 2): rewrite the doc block + the column descriptions
-#   Lab 2 (Lesson 3): the missing tests and maturity markers here; source freshness goes in
-#                     models/staging/_merlinco_sources.yml
-#   Lab 3 (Lesson 4): config.meta owner, groups, exposures
-#   Lab 4 (Lesson 5): config.access + contracts
+#   description      The prose, written inline as a YAML literal block (`|`). Kept here rather
+#                    than in a doc block so that everything about a data product is readable in
+#                    one place, which is the clearer thing to teach from. `|` not `>`: folded
+#                    scalars collapse newlines and would destroy the markdown formatting.
+#   data_type        Declared on every column. On the public products it is enforced by a
+#                    contract; elsewhere it documents shape without promising it.
+#   config.meta      Ownership (owner / support_channel / response_sla) and the maturity
+#                    marker. Queryable, so "which products have no owner" is a lookup.
+#   config.access    `public` is the opt-in curated interface. Everything not marked here
+#                    inherits `protected` from dbt_project.yml — referencable inside the
+#                    project, not offered as a product.
+#   grain / intended_use / caveats
+#                    Under config.meta on a column, and only on the two or three columns
+#                    per product where two people would defend two different numbers.
+#                    Blanket meta is how a catalog stops being read.
 #
-# access, group, meta, tags and contract must all be nested under `config:` — top level is rejected with
-# dbt1060. Same applies to freshness and loaded_at_field in _merlinco_sources.yml (Lab 2 step 1,
-# the first YAML edit of the day). See labs/02, labs/03 and labs/04.
+# access, group, meta, tags and contract must all be nested under `config:` — top level is
+# rejected with dbt1060.
 
 models:
+  # ---------------------------------------------------------------------------------------
+  # Dimensions
+  # ---------------------------------------------------------------------------------------
   - name: dim_customers
-    description: '{{ doc("dim_customers") }}'
+    description: |
+      Every wizard who has ever signed up with Merlin & Co., one row each, with where they live
+      and how many guilds they currently belong to.
+
+      **When to use it.** Describing and grouping wizards — by home region, signup date, favoured
+      discipline, or current guild count. This is the source of truth for which region a
+      *customer* lives in.
+
+      **Not** for spending or order history; that's `fct_customer_lifetime_value`. And not for
+      guild detail — `current_guild_count` is a count only, with no indication of which guilds or
+      at what tier. `fct_customer_guild_memberships` has that.
+
+      **Grain.** One row per wizard who has signed up, whether or not they have ever bought
+      anything.
+
+      **Watch out for:**
+
+      - **Most of these wizards may never have bought anything.** Counting rows counts signups,
+        not customers.
+      - **"Region" means two different things in this project.** The home region here is where
+        the *wizard lives*, which is often not the region of the shop they buy from. See
+        `dim_shops`.
+      - **`current_guild_count` is as of the last refresh and is 0, not empty, for non-members.**
+        An average over it is pulled down by every wizard who has never joined a guild.
+      - **`birth_year` is a cast from source text**, so an unreadable value arrives empty and age
+        bandings would quietly exclude those wizards. Not observed in the current data — a warn-level
+        test reports it if that changes.
     semantic_model:
       enabled: true
     agg_time_dimension: signed_up_at
+    config:
+      access: public
+      group: commerce_analytics
+      contract:
+        enforced: true
+      tags: ['certified', 'data_product']
+      meta:
+        maturity: production
+        owner:
+          name: Commerce Analytics
+        support_channel: '#commerce-analytics-support'
+        response_sla: '2 business hours for trust incidents'
+        certified_on: '2026-09-17'
     columns:
       - name: customer_id
-        description: Primary customer identifier.
+        description: The unique code for one wizard. Use it to bring other data alongside.
+        data_type: varchar
         entity:
           type: primary
           name: customer
         data_tests:
           - not_null
           - unique
+      - name: full_name
+        description: The wizard's name as they gave it at signup.
+        data_type: varchar
+      - name: email
+        description: The wizard's contact address, lowercased.
+        data_type: varchar
+      - name: home_region
+        description: The region the wizard lives in — not the region of the shop they buy from.
+        data_type: varchar
+        dimension:
+          type: categorical
+        config:
+          meta:
+            grain: "One region per wizard, from their signup details. It is not updated when they move."
+            intended_use: "Breaking customers down by where they live. For where the money was taken, use the region on dim_shops instead."
+            caveats: "This is the single most common mix-up in the project. Revenue by customer home region and revenue by shop region are different numbers and both are defensible — a wizard in Silverwood regularly buys from an Ember Coast shop. Always say which one you used."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Northern Reaches', 'Ember Coast', 'Silverwood', 'The Marshlands', 'Crystal Vale']
       - name: signed_up_at
-        description: Customer signup timestamp.
+        description: The moment the wizard signed up.
+        data_type: timestamp_ntz
         granularity: day
         dimension:
           type: time
       - name: signed_up_date
-        description: Customer signup date.
+        description: The day the wizard signed up.
+        data_type: date
         granularity: day
         dimension:
           type: time
-      - name: home_region
-        description: Canonical customer home region.
-        dimension:
-          type: categorical
+      - name: birth_year
+        description: The year the wizard was born. Cast from source text, so an unreadable value would arrive empty.
+        data_type: integer
       - name: favored_discipline
-        description: Customer favored magical discipline.
+        description: The branch of magic the wizard said they favour at signup.
+        data_type: varchar
         dimension:
           type: categorical
-  - name: dim_potions
-    description: '{{ doc("dim_potions") }}'
-    semantic_model:
-      enabled: true
-    columns:
-      - name: potion_sku
-        description: Primary potion SKU.
-        entity:
-          type: primary
-          name: potion
-        data_tests:
-          - not_null
-          - unique
-      - name: category
-        description: Potion category.
-        dimension:
-          type: categorical
-      - name: is_regulated
-        description: Regulated potion flag.
-        dimension:
-          type: categorical
-      - name: uses_hazardous_ingredient
-        description: Whether the recipe uses a hazardous ingredient.
-        dimension:
-          type: categorical
+      - name: current_guild_count
+        description: How many guilds the wizard belongs to right now.
+        data_type: number(18,0)
+        config:
+          meta:
+            grain: "A count as of the last refresh, not a history. A wizard who has left every guild shows 0."
+            intended_use: "Splitting customers into guild members and non-members, or spotting wizards with several affiliations."
+            caveats: "Shows 0, not empty, for wizards who have never joined a guild, so an average over this column is pulled toward zero by everyone who never joined. It also says nothing about which guild or what tier — for that go to fct_customer_guild_memberships."
+      - name: first_current_membership_started_at
+        description: When the wizard's longest-running current membership began. Empty if they belong to no guild today.
+        data_type: date
+
   - name: dim_shops
-    description: '{{ doc("dim_shops") }}'
+    description: |
+      The fifteen Merlin & Co. shop fronts, one row each, with where they are and when they
+      opened.
+
+      **When to use it.** Grouping or filtering anything by shop, city, or region. This is the
+      source of truth for which region a *shop* sits in.
+
+      **Not** for shop performance — there are no sales or staffing numbers here. Bring it
+      alongside sales data for that.
+
+      **Grain.** One row per shop, including any that have since closed.
+
+      **Watch out for:**
+
+      - **"Region" means two different things in this project.** The region here is where the
+        *shop* is. Wizards also have a home region, which is where the *customer* lives, and a
+        wizard in one region regularly buys from a shop in another. Revenue by shop region and
+        revenue by customer region are different, equally defensible numbers. Pick deliberately
+        and say which one you used.
+      - **`opened_at` is a cast from source text**, so an unreadable date arrives empty rather than
+        failing the load, and filtering on it would silently drop those shops along with their sales.
+        Not observed in the current data — a warn-level test reports it if that changes.
     semantic_model:
       enabled: true
     agg_time_dimension: opened_at
+    config:
+      access: public
+      group: commerce_analytics
+      contract:
+        enforced: true
+      tags: ['certified', 'data_product']
+      meta:
+        maturity: production
+        owner:
+          name: Commerce Analytics
+        support_channel: '#commerce-analytics-support'
+        response_sla: '2 business hours for trust incidents'
+        certified_on: '2026-09-17'
     columns:
       - name: shop_id
-        description: Primary shop identifier.
+        description: The unique code for one shop front.
+        data_type: varchar
         entity:
           type: primary
           name: shop
         data_tests:
           - not_null
           - unique
-      - name: opened_at
-        description: Shop opening date.
-        granularity: day
-        dimension:
-          type: time
+      - name: shop_name
+        description: The name on the shop front.
+        data_type: varchar
       - name: city
-        description: Shop city.
+        description: The town or city the shop trades in.
+        data_type: varchar
         dimension:
           type: categorical
       - name: region
-        description: Canonical shop region.
+        description: The region the shop sits in — not the region its customers live in.
+        data_type: varchar
         dimension:
           type: categorical
-  - name: dim_suppliers
-    description: Supplier dimension at one row per supplier.
-    semantic_model:
-      enabled: true
-    agg_time_dimension: contracted_since
-    columns:
-      - name: supplier_id
-        description: Primary supplier identifier.
-        entity:
-          type: primary
-          name: supplier
+        config:
+          meta:
+            grain: "One region per shop. Every purchase made at this shop belongs to this region regardless of where the buyer lives."
+            intended_use: "Reporting revenue and volume by where the sale happened. This is the one to use against shop targets."
+            caveats: "Wizards also carry a home region on dim_customers, and the two disagree often. Revenue by shop region and revenue by customer region are both defensible and will not match. Name which you used on the face of any report."
         data_tests:
-          - not_null
-          - unique
-      - name: contracted_since
-        description: Supplier contract start date.
+          - accepted_values:
+              arguments:
+                values: ['Northern Reaches', 'Ember Coast', 'Silverwood', 'The Marshlands', 'Crystal Vale']
+      - name: opened_at
+        description: The day the shop opened. Cast from source text, so an unreadable date would arrive empty.
+        data_type: date
         granularity: day
         dimension:
           type: time
-      - name: region
-        description: Supplier region.
-        dimension:
-          type: categorical
-  - name: dim_ingredients
-    description: Ingredient dimension at one row per ingredient.
+
+  - name: dim_potions
+    description: |
+      The catalog of everything Merlin & Co. sells, one row per product, with what it costs to
+      brew.
+
+      **When to use it.** Describing and grouping potions — by category, price, potency, shelf
+      life, or whether the recipe uses something hazardous. Bring it alongside sales or brewing
+      data to break those down by product.
+
+      **Not** for what sold or what was brewed. This is the catalog only, so counting rows counts
+      products offered, not products moved.
+
+      **Grain.** One row per potion. Products that have been retired are still listed, so this is
+      everything ever offered rather than everything currently for sale.
+
+      **Watch out for:**
+
+      - **`recipe_unit_cost_gold` is 0 for potions with no recipe recorded**, not empty. A margin
+        calculation against this will show those potions as pure profit. Check
+        `recipe_ingredient_count` is above 0 before trusting the cost.
+      - **Recipe cost is the cost of ingredients for one unit at today's ingredient prices.** It
+        is not what the potion actually cost to brew historically, and it excludes labour and
+        cauldron time.
+      - **`is_regulated` is reliable, but only because the source is currently clean.** The value is
+        normalized from mixed text (`Y`, `TRUE`, `1`, `no`…) and anything unrecognizable would become
+        empty, meaning "we don't know" rather than "not regulated". A test asserts there are none
+        today. If that test ever goes red, stop treating empty as false.
+      - **Money appears in two currencies.** `_copper` and `_gold` describe the same price; gold
+        is the reporting standard.
     semantic_model:
       enabled: true
+    config:
+      access: public
+      group: supply_chain_analytics
+      contract:
+        enforced: true
+      tags: ['certified', 'data_product']
+      meta:
+        maturity: production
+        owner:
+          name: Supply Chain Analytics
+        support_channel: '#supply-chain-analytics-support'
+        response_sla: '2 business hours for trust incidents'
+        certified_on: '2026-09-17'
     columns:
-      - name: ingredient_id
-        description: Primary ingredient identifier.
+      - name: potion_sku
+        description: The unique product code for one potion.
+        data_type: varchar
         entity:
           type: primary
-          name: ingredient
+          name: potion
         data_tests:
           - not_null
           - unique
-      - name: supplier_id
-        description: Supplier identifier.
-        entity:
-          type: foreign
-          name: supplier
+      - name: potion_name
+        description: The potion's name as it appears on the shelf.
+        data_type: varchar
+      - name: category
+        description: The kind of potion it is.
+        data_type: varchar
+        dimension:
+          type: categorical
         data_tests:
-          - relationships:
+          - accepted_values:
               arguments:
-                to: ref('dim_suppliers')
-                field: supplier_id
-      - name: unit
-        description: Ingredient unit.
+                values: ['love', 'clarity', 'healing', 'invisibility', 'luck', 'strength']
+      - name: base_price_copper
+        description: The potion's list price in copper coins. 100 copper is 1 gold.
+        data_type: number(18,2)
+      - name: base_price_gold
+        description: The potion's list price in gold. This is the reporting standard.
+        data_type: number(18,2)
+      - name: potency
+        description: The potion's strength rating from the product system.
+        data_type: number(10,2)
+      - name: shelf_life_days
+        description: How many days the potion keeps once brewed.
+        data_type: integer
+      - name: is_regulated
+        description: Whether the potion is subject to arcane trading regulation. Always populated today.
+        data_type: boolean
         dimension:
           type: categorical
-      - name: is_hazardous
-        description: Hazardous ingredient flag.
+      - name: introduced_at
+        description: The day the potion was added to the catalog.
+        data_type: date
+        granularity: day
+        dimension:
+          type: time
+      - name: recipe_ingredient_count
+        description: How many different ingredients the recipe calls for. 0 means no recipe is recorded.
+        data_type: number(18,0)
+      - name: recipe_unit_cost_gold
+        description: Estimated ingredient cost to brew one unit, at today's ingredient prices.
+        data_type: number(18,2)
+        config:
+          meta:
+            grain: "Cost for a single unit of this potion, priced at what its ingredients cost today."
+            intended_use: "Rough margin comparisons between potions. Fine for ranking, not for reporting actual cost of goods."
+            caveats: "Shows 0 — not empty — for any potion with no recipe recorded, which makes those potions look like pure profit in a margin calculation. Check recipe_ingredient_count is above 0 first. It also prices historical brewing at today's ingredient costs, and excludes labour and cauldron time entirely."
+      - name: uses_hazardous_ingredient
+        description: Whether any ingredient in the recipe is flagged hazardous.
+        data_type: boolean
         dimension:
           type: categorical
-      - name: harvest_season
-        description: Ingredient harvest season.
-        dimension:
-          type: categorical
+        config:
+          meta:
+            grain: "True if at least one ingredient in this potion's recipe is flagged hazardous."
+            intended_use: "Shortlisting potions for handling and compliance review."
+            caveats: "Reads false for a potion with no recipe recorded and for one whose ingredients have an unreadable hazard flag. False therefore means 'nothing known to be hazardous', not 'confirmed safe' — do not use it as a compliance sign-off."
+
   - name: dim_guilds
-    description: Guild dimension at one row per guild.
+    description: |
+      The arcane guilds Merlin & Co.'s wizards can belong to, one row each.
+
+      **When to use it.** Putting guild names onto membership records, and grouping by guild. This
+      is where you come to turn a guild code into the name a person would recognize, such as the
+      Alchemists' Guild.
+
+      **Not** for who belongs to what — that's `fct_customer_guild_memberships`. Counting rows
+      here counts guilds that exist, not guilds with members.
+
+      **Grain.** One row per guild.
+
+      **Watch out for:**
+
+      - **A guild with no members still appears here.** Bringing membership alongside and counting
+        will show it with zero, which is correct but easy to misread as missing data.
+      - **`founded_year` is a cast from source text**, so an unreadable value arrives empty. Not
+        observed in the current data — a warn-level test reports it if that changes.
     semantic_model:
       enabled: true
+    config:
+      access: public
+      group: commerce_analytics
+      contract:
+        enforced: true
+      tags: ['certified', 'data_product']
+      meta:
+        maturity: production
+        owner:
+          name: Commerce Analytics
+        support_channel: '#commerce-analytics-support'
+        response_sla: '2 business hours for trust incidents'
+        certified_on: '2026-09-17'
     columns:
       - name: guild_id
-        description: Primary guild identifier.
+        description: The unique code for one guild.
+        data_type: varchar
         entity:
           type: primary
           name: guild
@@ -176,14 +367,216 @@ models:
           - not_null
           - unique
       - name: guild_name
-        description: Guild name.
+        description: The guild's name as a person would say it, such as the Alchemists' Guild.
+        data_type: varchar
         dimension:
           type: categorical
+      - name: founded_year
+        description: The year the guild was founded. Cast from source text, so an unreadable value would arrive empty.
+        data_type: integer
+
+  - name: dim_suppliers
+    description: |
+      The regional houses Merlin & Co. buys brewing ingredients from, one row each.
+
+      **When to use it.** Grouping ingredients or brewing costs by supplier or supplier region,
+      and filtering on how reliable a supplier is.
+
+      **Not** for purchasing volume or spend with a supplier — Merlin & Co. records no purchase
+      orders, so there is no data product that answers "how much do we buy from them".
+
+      **Grain.** One row per supplier, including any no longer under contract.
+
+      **Watch out for:**
+
+      - **`reliability_rating` is a score carried over from the sourcing system** with no
+        documented scale or refresh date. Treat it as a rough ranking, not a measurement.
+      - **Supplier region is a third kind of region**, alongside shop region and customer home
+        region. Don't mix them in one breakdown.
+    semantic_model:
+      enabled: true
+    agg_time_dimension: contracted_since
+    config:
+      group: supply_chain_analytics
+      tags: ['data_product']
+      meta:
+        maturity: beta
+        owner:
+          name: Supply Chain Analytics
+        support_channel: '#supply-chain-analytics-support'
+        response_sla: '1 business day'
+    columns:
+      - name: supplier_id
+        description: The unique code for one supplier house.
+        data_type: varchar
+        entity:
+          type: primary
+          name: supplier
+        data_tests:
+          - not_null
+          - unique
+      - name: supplier_name
+        description: The supplier house's trading name.
+        data_type: varchar
+      - name: region
+        description: The region the supplier operates from. A third kind of region — see the caveats.
+        data_type: varchar
+        dimension:
+          type: categorical
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Northern Reaches', 'Ember Coast', 'Silverwood', 'The Marshlands', 'Crystal Vale']
+      - name: reliability_rating
+        description: A sourcing score carried over from the supplier system. No documented scale.
+        data_type: number(10,2)
+      - name: contracted_since
+        description: The day the supply contract started.
+        data_type: date
+        granularity: day
+        dimension:
+          type: time
+
+  - name: dim_ingredients
+    description: |
+      Everything that goes into a potion, one row per ingredient, with what it costs and who
+      supplies it.
+
+      **When to use it.** Ingredient-level cost and sourcing questions, and flagging recipes that
+      involve hazardous material.
+
+      **Not** for how much of an ingredient is in stock or has been consumed. Merlin & Co. tracks
+      neither.
+
+      **Grain.** One row per ingredient.
+
+      **Watch out for:**
+
+      - **Every ingredient currently resolves to a real supplier**, so `supplier_name` is populated
+        throughout. It is filled by a left join and *would* be empty for an ingredient pointing at a
+        supplier not on record — such ingredients would drop out of any breakdown by supplier, taking
+        their cost with them. A test asserts there are none today.
+      - **`unit_cost_gold` is the current price, not the price at the time of purchase.** Any
+        historical cost built from it is restated at today's prices.
+      - **`is_hazardous` is populated throughout**, asserted by a test. Were it ever empty that would
+        mean unknown, not safe — so do not start reading it as a safety sign-off if that test goes
+        red.
+      - **Units are not comparable across ingredients.** A pinch and a bundle both appear; adding
+        quantities across different units produces a meaningless number.
+    semantic_model:
+      enabled: true
+    config:
+      group: supply_chain_analytics
+      contract:
+        enforced: true
+      tags: ['data_product']
+      meta:
+        maturity: beta
+        owner:
+          name: Supply Chain Analytics
+        support_channel: '#supply-chain-analytics-support'
+        response_sla: '1 business day'
+    columns:
+      - name: ingredient_id
+        description: The unique code for one ingredient.
+        data_type: varchar
+        entity:
+          type: primary
+          name: ingredient
+        data_tests:
+          - not_null
+          - unique
+      - name: ingredient_name
+        description: The ingredient's name as a brewer would say it.
+        data_type: varchar
+      - name: supplier_id
+        description: The supplier house this ingredient comes from.
+        data_type: varchar
+        entity:
+          type: foreign
+          name: supplier
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_suppliers')
+                field: supplier_id
+      - name: supplier_name
+        description: The supplier house's name. Populated throughout — no ingredient lacks a known supplier.
+        data_type: varchar
+      - name: unit
+        description: The unit this ingredient is measured in. Not comparable across ingredients.
+        data_type: varchar
+        dimension:
+          type: categorical
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['pinch', 'sprig', 'bundle', 'gram', 'dram', 'vial']
+      - name: unit_cost_copper
+        description: Current cost of one unit in copper coins. 100 copper is 1 gold.
+        data_type: number(18,2)
+      - name: unit_cost_gold
+        description: Current cost of one unit in gold. This is the reporting standard.
+        data_type: number(18,2)
+      - name: is_hazardous
+        description: Whether the ingredient needs hazardous handling. Always populated today; empty would mean unknown.
+        data_type: boolean
+        dimension:
+          type: categorical
+      - name: harvest_season
+        description: The season the ingredient is gathered in.
+        data_type: varchar
+        dimension:
+          type: categorical
+
+  # ---------------------------------------------------------------------------------------
+  # Facts
+  # ---------------------------------------------------------------------------------------
   - name: fct_orders
-    description: Order fact at one row per order with item revenue and payment summaries.
+    description: |
+      Every purchase a wizard has made, one row per order, with what it was worth and whether it
+      was paid for.
+
+      **When to use it.** Order counts, order value, discounting, and payment outcomes at the
+      level of a whole purchase. This is the right place for "how many orders" and "what's our
+      average order value" questions.
+
+      **Not** for what was in the order — use `fct_order_items` for anything broken down by potion
+      or category.
+
+      **Grain.** One row per order, whatever its status, including cancelled ones.
+
+      **Watch out for:**
+
+      - **Cancelled and returned orders are included.** Counting rows counts attempts, not sales.
+        Filter on `order_status`.
+      - **The most recent day is always incomplete.** Marketplace orders arrive up to 48 hours
+        late. *(Business context — told to us, not verifiable here.)*
+      - **The payment columns describe attempts, not settlement.** A wizard who retried a failed
+        payment shows more than one attempt on a single order, and `successful_payment_gold` can
+        differ from order value in both directions — part payments down, retries up. It is not a
+        substitute for what was actually collected.
+      - **An order with no lines recorded still appears**, showing 0 gross and a negative net
+        equal to its discount. Rare, and it will quietly drag down any average.
+      - **"Average order value" means three different things in this project.** The one defined
+        here is the plain average across orders, cancellations included.
     semantic_model:
       enabled: true
     agg_time_dimension: ordered_at
+    config:
+      access: public
+      group: commerce_analytics
+      contract:
+        enforced: true
+      tags: ['certified', 'data_product']
+      meta:
+        maturity: production
+        owner:
+          name: Commerce Analytics
+        support_channel: '#commerce-analytics-support'
+        response_sla: '2 business hours for trust incidents'
+        certified_on: '2026-09-17'
     metrics:
       - name: orders
         type: simple
@@ -210,14 +603,29 @@ models:
         label: Discounts
         agg: sum
         expr: discount_gold
-      - name: average_order_value
+      - name: average_order_value_per_order
         type: simple
-        label: Average Order Value
+        label: Average Order Value (per order, all statuses)
+        description: >
+          Average value of an order across every order including cancellations. One of three
+          things called "average order value" in this project — see
+          average_order_value_per_billable_order here, and the average_order_value column on
+          fct_customer_lifetime_value, which averages per customer instead.
         agg: average
         expr: net_revenue_gold
+      - name: average_order_value_per_billable_order
+        type: simple
+        label: Average Order Value (per billable order)
+        description: >
+          Average value of an order with cancellations excluded. This is the governed
+          definition to reach for when someone asks for "average order value" without
+          qualifying it, and it is the one that matches how the finance team reports.
+        agg: average
+        expr: case when order_status is distinct from 'cancelled' then net_revenue_gold end
     columns:
       - name: order_id
-        description: Primary order identifier.
+        description: The unique code for one purchase.
+        data_type: varchar
         entity:
           type: primary
           name: order
@@ -225,43 +633,165 @@ models:
           - not_null
           - unique
       - name: customer_id
-        description: Customer identifier.
+        description: The wizard who made the purchase.
+        data_type: varchar
         entity:
           type: foreign
           name: customer
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('dim_customers')
                 field: customer_id
       - name: shop_id
-        description: Shop identifier.
+        description: The shop the purchase was made at.
+        data_type: varchar
         entity:
           type: foreign
           name: shop
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('dim_shops')
                 field: shop_id
       - name: ordered_at
-        description: Order timestamp.
+        description: The moment the purchase was made.
+        data_type: timestamp_ntz
         granularity: day
         dimension:
           type: time
+      - name: ordered_date
+        description: The day the purchase was made.
+        data_type: date
+        granularity: day
+        dimension:
+          type: time
+        config:
+          meta:
+            grain: "The calendar day of the purchase, in the shop's own time."
+            intended_use: "Daily and weekly trend reporting."
+            caveats: "The most recent day is always incomplete — marketplace purchases arrive up to 48 hours later, so yesterday's total keeps rising for two more days. Comparing yesterday with the day before will always look like a fall. This is business context we were told, not something checkable in the project."
       - name: order_status
-        description: Order status.
+        description: Where the purchase ended up.
+        data_type: varchar
         dimension:
           type: categorical
+        config:
+          meta:
+            grain: "One status per purchase, as it stands at the last refresh. There is no history of how it changed."
+            intended_use: "Filtering out cancellations and returns before reporting sales."
+            caveats: "Every row is present whatever its status, so counting rows counts attempts rather than sales. 'returned' purchases still carry their full value in every money column — only the returned_revenue column on fct_customer_lifetime_value isolates them."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['completed', 'returned', 'cancelled', 'placed']
       - name: order_channel
-        description: Order channel.
+        description: How the purchase was placed — in store, by courier owl, or through the marketplace.
+        data_type: varchar
         dimension:
           type: categorical
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['in_store', 'courier_owl', 'marketplace']
+      - name: order_item_count
+        description: How many different potions were on the purchase. 0 if no lines were recorded.
+        data_type: number(18,0)
+      - name: total_quantity
+        description: Total units across every line on the purchase.
+        data_type: number(18,4)
+      - name: gross_revenue_gold
+        description: Value of the purchase in gold before any discount.
+        data_type: number(18,2)
+      - name: discount_gold
+        description: Discount given on the purchase, in gold.
+        data_type: number(18,2)
+      - name: net_revenue_gold
+        description: Value of the purchase in gold after discount. The headline revenue figure.
+        data_type: number(18,2)
+        config:
+          meta:
+            grain: "One amount per purchase, after discount, in gold."
+            intended_use: "The revenue number to add up for order-level reporting."
+            caveats: "Includes cancelled and returned purchases at full value — filter on order_status or you will overstate revenue. A purchase with no lines recorded shows a negative figure equal to its discount, which is rare but will drag down any average. This is what was ordered, not what was collected; compare with successful_payment_gold for that."
+      - name: first_paid_at
+        description: The first payment attempt on the purchase. Empty if nobody ever tried to pay.
+        data_type: timestamp_ntz
+      - name: last_paid_at
+        description: The most recent payment attempt on the purchase.
+        data_type: timestamp_ntz
+      - name: payment_attempt_count
+        description: How many times payment was attempted, successful or not.
+        data_type: number(18,0)
+      - name: successful_payment_count
+        description: How many payment attempts succeeded.
+        data_type: number(18,0)
+      - name: failed_payment_count
+        description: How many payment attempts failed.
+        data_type: number(18,0)
+      - name: refunded_payment_count
+        description: How many payments were later refunded.
+        data_type: number(18,0)
+      - name: successful_payment_gold
+        description: Gold actually collected on the purchase across all successful attempts.
+        data_type: number(18,2)
+      - name: failed_payment_gold
+        description: Gold attempted but declined. Not revenue and not lost revenue.
+        data_type: number(18,2)
+      - name: refunded_payment_gold
+        description: Gold handed back after the purchase. A positive number — subtract it deliberately.
+        data_type: number(18,2)
+
   - name: fct_order_items
-    description: '{{ doc("fct_order_items") }}'
+    description: |
+      Every potion sold, one row per line on a wizard's order.
+
+      **When to use it.** Revenue and unit-volume reporting broken down by shop, region, potion,
+      potion category, and sales channel. This is the right starting point for "what sold, where,
+      and for how much".
+
+      **Not** for stock on hand. Nothing in Merlin & Co.'s data answers that today:
+      `fct_brew_events` records how much was brewed, but nothing subtracts what was sold from
+      what was made. If someone asks for inventory, the honest answer is that it doesn't exist
+      yet.
+
+      **Grain.** One row per line on an order. An order containing three different potions
+      appears three times. Adding up spend across orders is safe. Adding it up after bringing
+      guild memberships alongside is not, because a wizard can hold several memberships and each
+      one duplicates their purchases.
+
+      **Watch out for:**
+
+      - **Returned and cancelled orders are included at full value.** Discounts are already
+        subtracted; order status is not. Filter on `order_status` or you will overstate revenue.
+      - **The most recent day is always incomplete.** Marketplace orders arrive up to 48 hours
+        after the purchase, so yesterday's total will rise for two more days. This is normal and
+        is not a data problem. *(Business context — told to us, not verifiable here.)*
+      - **Money appears in two currencies.** Columns ending `_copper` and `_gold` describe the
+        same purchase; 100 copper is 1 gold. Gold is the reporting standard — mixing them
+        inflates totals by 100x.
+      - **The discount on a line is an allocation, not a real discount.** Discounts are struck at
+        the order level and spread across lines in proportion to line value, with rounding
+        pennies pushed onto the last line. A single line's discount is therefore an estimate; the
+        order's total discount is exact.
     semantic_model:
       enabled: true
     agg_time_dimension: ordered_at
+    config:
+      access: public
+      group: commerce_analytics
+      contract:
+        enforced: true
+      tags: ['certified', 'data_product']
+      meta:
+        maturity: production
+        owner:
+          name: Commerce Analytics
+        support_channel: '#commerce-analytics-support'
+        response_sla: '2 business hours for trust incidents'
+        certified_on: '2026-09-17'
     metrics:
       - name: units_sold
         type: simple
@@ -273,9 +803,20 @@ models:
         label: Line Revenue
         agg: sum
         expr: line_net_gold
+      - name: potion_revenue_by_shop_region
+        type: simple
+        label: Potion Revenue (by shop region)
+        description: >
+          Revenue after discount, with cancelled purchases excluded. Group this by the region
+          on dim_shops for "where the sale happened" and by home_region on dim_customers for
+          "where the buyer lives" — they are different numbers and this metric does not pick
+          for you. Question bank Q1 is exactly this choice.
+        agg: sum
+        expr: case when order_status is distinct from 'cancelled' then line_net_gold end
     columns:
       - name: order_item_id
-        description: Primary order item identifier.
+        description: The unique code for one line on a purchase.
+        data_type: varchar
         entity:
           type: primary
           name: order_item
@@ -283,57 +824,161 @@ models:
           - not_null
           - unique
       - name: order_id
-        description: Order identifier.
+        description: The purchase this line belongs to.
+        data_type: varchar
         entity:
           type: foreign
           name: order
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('fct_orders')
                 field: order_id
       - name: customer_id
-        description: Customer identifier.
+        description: The wizard who made the purchase.
+        data_type: varchar
         entity:
           type: foreign
           name: customer
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
       - name: shop_id
-        description: Shop identifier.
+        description: The shop the purchase was made at.
+        data_type: varchar
         entity:
           type: foreign
           name: shop
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_shops')
+                field: shop_id
       - name: potion_sku
-        description: Potion SKU.
+        description: The potion sold on this line.
+        data_type: varchar
         entity:
           type: foreign
           name: potion
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('dim_potions')
                 field: potion_sku
       - name: ordered_at
-        description: Order timestamp.
+        description: The moment the purchase was made.
+        data_type: timestamp_ntz
+        granularity: day
+        dimension:
+          type: time
+      - name: ordered_date
+        description: The day the purchase was made. The most recent day is always incomplete.
+        data_type: date
         granularity: day
         dimension:
           type: time
       - name: order_status
-        description: Order status.
+        description: Where the purchase this line belongs to ended up.
+        data_type: varchar
         dimension:
           type: categorical
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['completed', 'returned', 'cancelled', 'placed']
       - name: order_channel
-        description: Order channel.
+        description: How the purchase was placed.
+        data_type: varchar
         dimension:
           type: categorical
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['in_store', 'courier_owl', 'marketplace']
       - name: potion_category
-        description: Potion category.
+        description: The kind of potion sold on this line. Empty if the potion is not in the catalog.
+        data_type: varchar
         dimension:
           type: categorical
+      - name: quantity
+        description: How many units of this potion were bought on this line.
+        data_type: number(18,4)
+        config:
+          meta:
+            grain: "Units of one potion on one line of one purchase."
+            intended_use: "Volume reporting — units sold by potion, shop, region or channel."
+            caveats: "Includes lines on cancelled and returned purchases, so unfiltered it is units ordered rather than units sold. It is stored with decimal places because some ingredients-style potions sell by fractional measure, so do not assume whole numbers."
+      - name: unit_price_copper
+        description: Price of one unit in copper coins. 100 copper is 1 gold.
+        data_type: number(18,2)
+      - name: unit_price_gold
+        description: Price of one unit in gold. This is the reporting standard.
+        data_type: number(18,2)
+      - name: line_gross_gold
+        description: Value of this line in gold before discount — quantity times unit price.
+        data_type: number(18,2)
+      - name: allocated_discount_gold
+        description: The share of the purchase's discount attributed to this line.
+        data_type: number(18,2)
+        config:
+          meta:
+            grain: "A share of an order-level discount, spread across that order's lines in proportion to line value."
+            intended_use: "Adding up discount across many lines, where the allocation averages out. Safe at the level of a shop, region, potion or day."
+            caveats: "This is an allocation, not a discount that was actually struck on this line. Rounding pennies are all pushed onto the last line of each purchase, so a single line's figure can be off by a few copper and the last line of an order looks slightly different from its siblings. The order-level discount on fct_orders is the exact one."
+      - name: line_net_gold
+        description: Value of this line in gold after its share of the discount.
+        data_type: number(18,2)
+        config:
+          meta:
+            grain: "One amount per line of one purchase, after discount, in gold."
+            intended_use: "The revenue number to add up when reporting by potion, category, shop or region."
+            caveats: "Returned and cancelled purchases are included at full value — filter on order_status. Adding this up after bringing guild memberships alongside inflates the total, because a wizard with several memberships has each purchase counted once per membership."
+
   - name: fct_payments
-    description: Payment fact at one row per payment attempt.
+    description: |
+      Every attempt a wizard made to pay for an order, one row per attempt.
+
+      **When to use it.** Payment failure and refund analysis, and comparing payment methods.
+      This is the only place with attempt-by-attempt detail.
+
+      **Not** for revenue. An order can be attempted several times and refunded later, so adding
+      these up does not give you sales. Use `fct_orders` or `fct_order_items` for revenue.
+
+      **Grain.** One row per payment attempt. One order can appear many times, or not at all if
+      nobody ever tried to pay.
+
+      **Watch out for:**
+
+      - **Adding up every row double-counts.** Successes, failures and refunds are all in here
+        together. Always filter on `payment_status` first.
+      - **Refunds are positive numbers, not negative.** Subtract them deliberately; adding them
+        to successes inflates collections.
+      - **Superseded for order-level questions.** Attempt counts and amounts per order are
+        already summarized onto `fct_orders`, which is the supported path. See the deprecation
+        note on this data product.
     semantic_model:
       enabled: true
     agg_time_dimension: paid_at
+    # Deprecated in favour of the payment summaries already on fct_orders. The per-attempt
+    # grain here will return as a versioned fct_payment_attempts before this date; until then
+    # this stays available and supported. Announced in #commerce-analytics-support.
+    deprecation_date: 2027-03-31
+    config:
+      group: commerce_analytics
+      tags: ['data_product']
+      meta:
+        maturity: deprecated
+        owner:
+          name: Commerce Analytics
+        support_channel: '#commerce-analytics-support'
+        response_sla: '2 business hours for trust incidents'
+        deprecated_in_favor_of: 'fct_orders for order-level payment questions; fct_payment_attempts (not yet built) for per-attempt detail'
     metrics:
       - name: successful_payment_amount
         type: simple
@@ -352,7 +997,8 @@ models:
         expr: case when payment_status = 'refunded' then 1 else 0 end
     columns:
       - name: payment_id
-        description: Primary payment identifier.
+        description: The unique code for one payment attempt.
+        data_type: varchar
         entity:
           type: primary
           name: payment
@@ -360,33 +1006,94 @@ models:
           - not_null
           - unique
       - name: order_id
-        description: Order identifier.
+        description: The purchase this attempt was against.
+        data_type: varchar
         entity:
           type: foreign
           name: order
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('fct_orders')
                 field: order_id
+      - name: payment_method
+        description: How the wizard tried to pay.
+        data_type: varchar
+        dimension:
+          type: categorical
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['coin', 'guild_credit', 'crystal_transfer', 'barter']
+      - name: amount_copper
+        description: Amount attempted in copper coins. 100 copper is 1 gold.
+        data_type: number(18,2)
+      - name: amount_gold
+        description: Amount attempted in gold. Adding this up across all rows is not revenue.
+        data_type: number(18,2)
+      - name: payment_status
+        description: Whether the attempt succeeded, failed, or was later refunded.
+        data_type: varchar
+        dimension:
+          type: categorical
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['success', 'failed', 'refunded']
       - name: paid_at
-        description: Payment timestamp.
+        description: The moment the attempt was made.
+        data_type: timestamp_ntz
         granularity: day
         dimension:
           type: time
-      - name: payment_status
-        description: Payment status.
+      - name: paid_date
+        description: The day the attempt was made.
+        data_type: date
+        granularity: day
         dimension:
-          type: categorical
-      - name: payment_method
-        description: Payment method.
-        dimension:
-          type: categorical
+          type: time
+
   - name: fct_brew_events
-    description: Brew event fact at one row per production batch.
+    description: |
+      Every batch of potion a shop has brewed, one row per batch, with an estimate of what it
+      cost to make.
+
+      **When to use it.** Production volume, brewing quality rates, cauldron time, and estimated
+      production cost by shop, potion, or brewer.
+
+      **Not** for stock on hand. This records what was made and nothing subtracts what was sold,
+      so a running total here is not inventory. And not for sales — brewing a batch is not
+      selling it.
+
+      **Grain.** One row per brewing batch. A shop brewing the same potion twice in a day appears
+      twice.
+
+      **Watch out for:**
+
+      - **`sellable_units_brewed` is 0 for any batch that failed its quality check**, while
+        `batch_size` still shows the full amount. Using `batch_size` as production output
+        overstates what Merlin & Co. can actually sell.
+      - **`estimated_batch_cost_gold` is an estimate at today's ingredient prices**, and is 0 for
+        any potion with no recipe recorded. Those batches look free.
+      - **`brewer_name` is free text from the shop system**, so the same person may appear under
+        several spellings. Counting distinct brewers will overcount.
+      - **A batch with no quality check recorded would fall out of both the pass and fail counts**,
+        so the two will not always add up to the batch count. The `accepted_values` test on this
+        column cannot detect that case — an empty value passes it — so a warn-level emptiness test
+        sits alongside it to report the gap.
     semantic_model:
       enabled: true
     agg_time_dimension: brewed_at
+    config:
+      group: supply_chain_analytics
+      tags: ['data_product']
+      meta:
+        maturity: beta
+        owner:
+          name: Supply Chain Analytics
+        support_channel: '#supply-chain-analytics-support'
+        response_sla: '1 business day'
     metrics:
       - name: brew_batches
         type: simple
@@ -415,7 +1122,8 @@ models:
         expr: case when quality_check = 'fail' then 1 else 0 end
     columns:
       - name: brew_id
-        description: Primary brew event identifier.
+        description: The unique code for one brewing batch.
+        data_type: varchar
         entity:
           type: primary
           name: brew
@@ -423,50 +1131,135 @@ models:
           - not_null
           - unique
       - name: potion_sku
-        description: Potion SKU.
+        description: The potion that was brewed.
+        data_type: varchar
         entity:
           type: foreign
           name: potion
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('dim_potions')
                 field: potion_sku
       - name: shop_id
-        description: Shop identifier.
+        description: The shop that brewed the batch.
+        data_type: varchar
         entity:
           type: foreign
           name: shop
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('dim_shops')
                 field: shop_id
+      - name: cauldron_id
+        description: Which cauldron in the shop was used.
+        data_type: varchar
       - name: brewed_at
-        description: Brew timestamp.
+        description: The moment brewing finished.
+        data_type: timestamp_ntz
         granularity: day
         dimension:
           type: time
+      - name: brewed_date
+        description: The day brewing finished.
+        data_type: date
+        granularity: day
+        dimension:
+          type: time
+      - name: batch_size
+        description: How many units came out of the cauldron, before any quality check.
+        data_type: number(18,4)
+      - name: brew_duration_minutes
+        description: How long the batch took to brew, in minutes.
+        data_type: number(18,4)
       - name: quality_check
-        description: Quality check result.
+        description: Whether the batch passed inspection. Empty if the shop recorded nothing.
+        data_type: varchar
+        dimension:
+          type: categorical
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['pass', 'fail']
+      - name: brewer_name
+        description: Free text name of the brewer. The same person may appear under several spellings.
+        data_type: varchar
         dimension:
           type: categorical
       - name: potion_category
-        description: Potion category.
+        description: The kind of potion brewed. Empty if the potion is not in the catalog.
+        data_type: varchar
         dimension:
           type: categorical
-      - name: brewer_name
-        description: Brewer name.
+      - name: recipe_ingredient_count
+        description: How many ingredients the recipe calls for. 0 means no recipe is recorded.
+        data_type: number(18,0)
+      - name: recipe_unit_cost_gold
+        description: Estimated ingredient cost for one unit, at today's prices. 0 if no recipe.
+        data_type: number(18,2)
+      - name: estimated_batch_cost_gold
+        description: Batch size times unit recipe cost. An estimate, and 0 where no recipe exists.
+        data_type: number(18,2)
+      - name: passed_quality_check
+        description: True only where the batch explicitly passed. Empty quality checks read false.
+        data_type: boolean
         dimension:
           type: categorical
+      - name: sellable_units_brewed
+        description: Units Merlin & Co. can actually sell — 0 for any batch that failed inspection.
+        data_type: number(18,4)
+
   - name: fct_customer_guild_memberships
-    description: Customer guild membership fact at one row per membership interval.
+    description: |
+      Which guilds a wizard has belonged to and when, one row per stretch of membership.
+
+      **When to use it.** Guild membership questions — who is in a guild, at what tier, and since
+      when. This is where a guild question starts.
+
+      **Not** for counting customers on its own, and not for spend. Bring
+      `fct_customer_lifetime_value` alongside for spending, but read the grain warning below
+      first — this is the single most common source of inflated numbers in the whole project.
+
+      **Grain.** One row per stretch of membership, not one row per wizard and not one row per
+      guild. A wizard who joined, left, and rejoined appears three times. A wizard in two guilds
+      at once appears twice.
+
+      **Watch out for:**
+
+      - **Bringing this alongside customer data multiplies the customer.** Counting wizards or
+        adding up their spend afterwards inflates both, usually by 30–60%, and the result looks
+        entirely plausible. Keep only rows where `is_current_membership` is true before counting
+        anything — and even then a wizard in two guilds at once still appears twice.
+      - **`is_current_membership` is calculated against the day the data was last refreshed**, so
+        a row can flip from true to false overnight with nothing in the source changing.
+      - **An empty `valid_to` means the membership is still open**, not that the date is missing.
+        Filtering it out drops exactly the current members you probably wanted.
+      - **Tier is the tier recorded for that stretch of membership**, not the wizard's current
+        tier. A wizard who was promoted has two rows with two different tiers, and both are
+        correct.
     semantic_model:
       enabled: true
     agg_time_dimension: valid_from
+    config:
+      access: public
+      group: commerce_analytics
+      contract:
+        enforced: true
+      tags: ['certified', 'data_product']
+      meta:
+        maturity: production
+        owner:
+          name: Commerce Analytics
+        support_channel: '#commerce-analytics-support'
+        response_sla: '2 business hours for trust incidents'
+        certified_on: '2026-09-17'
     columns:
       - name: membership_id
-        description: Primary membership identifier.
+        description: The unique code for one stretch of membership.
+        data_type: varchar
         entity:
           type: primary
           name: membership
@@ -474,41 +1267,62 @@ models:
           - not_null
           - unique
       - name: customer_id
-        description: Customer identifier.
+        description: The wizard who held the membership.
+        data_type: varchar
         entity:
           type: foreign
           name: customer
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('dim_customers')
                 field: customer_id
       - name: guild_id
-        description: Guild identifier.
+        description: The guild the membership is with.
+        data_type: varchar
         entity:
           type: foreign
           name: guild
         data_tests:
+          - not_null
           - relationships:
               arguments:
                 to: ref('dim_guilds')
                 field: guild_id
+      - name: membership_tier
+        description: The standing the wizard held during this stretch, not their standing today.
+        data_type: varchar
+        dimension:
+          type: categorical
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['apprentice', 'adept', 'archmage']
       - name: valid_from
-        description: Membership validity start date.
+        description: The day this stretch of membership began.
+        data_type: date
         granularity: day
         dimension:
           type: time
       - name: valid_to
-        description: Membership validity end date.
+        description: The day this stretch ended. Empty means it is still open.
+        data_type: date
         granularity: day
         dimension:
           type: time
-      - name: membership_tier
-        description: Membership tier.
-        dimension:
-          type: categorical
+        config:
+          meta:
+            grain: "The last day of one stretch of membership for one wizard in one guild."
+            intended_use: "Working out when someone stopped being a member, and building membership timelines."
+            caveats: "Empty means the membership is still running, not that the date is unknown. Filtering out empties therefore drops exactly the current members most questions are about. Use is_current_membership instead of writing your own date logic."
       - name: is_current_membership
-        description: Active membership flag.
+        description: Whether this stretch of membership is running right now.
+        data_type: boolean
         dimension:
           type: categorical
-  
+        config:
+          meta:
+            grain: "True for one stretch of membership that covers the day the data was last refreshed."
+            intended_use: "The filter to apply before counting members or bringing spending alongside. Always apply it for 'how many wizards are in guild X' questions."
+            caveats: "Recalculated against the refresh date, so a row flips from true to false overnight with nothing changing in the source — the same report run two days apart can disagree. And it does not make the grain safe on its own: a wizard in two guilds at once still has two current rows, so counting wizards needs a distinct count on customer_id."

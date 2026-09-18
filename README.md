@@ -6,6 +6,22 @@ Instructors: Kyle Tuft & Matteo Dijoux
 
 ---
 
+> ### You are on the reference branch
+>
+> This branch is the **worked reference implementation** — every lab completed, scoring all
+> eleven boxes on [`docs/TAKEAWAY_CHECKLIST.md`](docs/TAKEAWAY_CHECKLIST.md). It is published as
+> `solutions`, and mirrored as `production-after` for the instructors' own use; the two are kept
+> identical and pushed together.
+>
+> **Attendees: start on `main`, not here.** `main` is the "before" state the labs are written
+> against. Come back to this branch after you've had a real go — diffing your work against it is
+> the most useful thing you can do with it.
+>
+> Two pages here exist only on this branch:
+> [`docs/DATA_LIMITATIONS.md`](docs/DATA_LIMITATIONS.md), which records where the generated
+> dataset can't support the pattern being taught, and
+> [`docs/EXPECTED_FAILURES.md`](docs/EXPECTED_FAILURES.md), which names what is red on purpose.
+
 ## What this lab is (and isn't)
 
 This is **not** a modeling lab. The dbt project in this repo already builds and passes. Over the next 90 minutes you'll make it *answer-ready* — so a stakeholder who doesn't write SQL can find a data product, understand it, trust it, know who stands behind it, and get a governed answer without pinging your team.
@@ -78,7 +94,11 @@ after the event so you can revisit the exercises or lift the patterns into your 
 - **The data is fictional.** Merlin & Co. Apothecaries is generated training data. No real customer,
   company, or production data appears anywhere in this project.
 - **You bring your own warehouse.** The workshop environment is only available to attendees during
-  the session. To run this afterwards, point `profiles.yml` at your own Snowflake account and load
-  your own copy of the source tables — see `models/staging/_merlinco_sources.yml` for the shape.
+  the session. To run this afterwards, copy `profiles.yml.example` to `~/.dbt/profiles.yml`, point
+  it at your own Snowflake account, and load your own copy of the source tables — see
+  `models/staging/_merlinco_sources.yml` for the shape.
+- **CI runs `dbt parse` only.** No warehouse credentials are needed or stored. It catches the
+  YAML-shape mistakes this repo spends its time teaching about — `dbt1060` nesting,
+  duplicate definitions, discarded source entries — and nothing else.
 
 Licensed under the Apache License 2.0. See [`LICENSE`](LICENSE).

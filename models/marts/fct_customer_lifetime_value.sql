@@ -1,3 +1,6 @@
+-- Column names here drop the `_gold` suffix the intermediate layer carries, so the
+-- stakeholder-facing names match what the docs and the Lab 1 prompt call them. All money
+-- columns are gold; the caveat block on the model says so.
 select
     customer_id,
     signed_up_date,

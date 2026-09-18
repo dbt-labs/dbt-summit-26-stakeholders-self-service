@@ -1,8 +1,33 @@
 version: 2
 
-# Lab 2 (Lesson 3) adds source freshness here. Both `freshness` and `loaded_at_field` must be
-# nested under `config:` — at the table level they're rejected with dbt1060 — and ORDERED_AT is
-# stored as text, so loaded_at_field needs a try_to_timestamp_ntz cast. Snippet in labs/02.
+# REFERENCE IMPLEMENTATION — freshness on every source table, in three tiers.
+#
+# There is no load timestamp anywhere in RAW. Every timestamp in this dataset is a *business
+# event* time, stored as text. Business time and load time answer different questions, so this
+# file uses whichever check the table can actually support and says so on each one:
+#
+#   Tier A  loaded_at_field with a cast — tables with a real, dense event clock. Measures how
+#           recent the newest *event* is. Does not prove the table finished loading.
+#   Tier B  loaded_at_query — child tables with no clock of their own, borrowing the parent's.
+#   Tier C  freshness with no loaded_at_field — dbt falls back to warehouse table metadata
+#           (Snowflake's last_altered). The only honest option for slowly-changing reference
+#           data, where an event date says nothing about staleness: a shop that opened in 2019
+#           does not mean this table is stale. Proves the loader ran; proves nothing about
+#           completeness.
+#
+# The workshop dataset is static, so every Tier A and Tier B check trips error_after
+# immediately. That is correct behaviour on an honest threshold, not a broken config — see
+# docs/DATA_LIMITATIONS.md. Thresholds describe the pipeline you want, not the one you have.
+#
+# Every try_to_timestamp_ntz below also emits `dbt9002: timestamp type without a timezone, we
+# will assume a UTC timezone`. That warning is expected and the behaviour it describes is the
+# one we want. The raw text carries no offset, so there is no timezone to read; dbt assuming
+# UTC is deterministic. Casting to timestamp_tz instead would attach the *session* timezone,
+# which would make freshness results differ between environments for identical data. Leave the
+# ntz casts alone.
+#
+# Both `freshness` and `loaded_at_field` must be nested under `config:` — at the table level
+# they're rejected with dbt1060.
 
 sources:
   - name: merlinco_apothecaries
@@ -14,9 +39,24 @@ sources:
       value asserted in a lab or the question bank stops matching, check the dataset version first.
     database: RAW
     schema: MERLINCO_APOTHECARIES
+    config:
+      meta:
+        owner:
+          name: Analytics Engineering
+        support_channel: '#analytics-engineering-support'
+        response_sla: '1 business day for load failures'
+      tags: ['source:merlinco_apothecaries']
     tables:
       - name: RAW_CUSTOMERS
         identifier: RAW_CUSTOMERS
+        # Tier A, but a weak one. Signups are sparse enough that a genuinely quiet week is
+        # indistinguishable from a broken loader, hence the wide thresholds. If this table ever
+        # gets a real load timestamp, switch to it — this is a proxy, not a measurement.
+        config:
+          loaded_at_field: try_to_timestamp_ntz(SIGNED_UP_AT)
+          freshness:
+            warn_after: {count: 7, period: day}
+            error_after: {count: 14, period: day}
         description: Raw customer records.
         columns:
           - name: CUSTOMER_ID
@@ -38,6 +78,13 @@ sources:
             description: Customer favored magical discipline.
       - name: RAW_SHOPS
         identifier: RAW_SHOPS
+        # Tier C. Slowly-changing reference data. OPENED_AT is an event date, not a load date —
+        # a shop that opened years ago says nothing about whether this table loaded today — so
+        # freshness here uses warehouse table metadata instead of a column.
+        config:
+          freshness:
+            warn_after: {count: 7, period: day}
+            error_after: {count: 30, period: day}
         description: Raw shop locations.
         columns:
           - name: SHOP_ID
@@ -55,6 +102,11 @@ sources:
             description: Shop opening date as text.
       - name: RAW_SUPPLIERS
         identifier: RAW_SUPPLIERS
+        # Tier C. Contract dates are event dates, not load dates. Warehouse metadata instead.
+        config:
+          freshness:
+            warn_after: {count: 7, period: day}
+            error_after: {count: 30, period: day}
         description: Raw supplier records.
         columns:
           - name: SUPPLIER_ID
@@ -72,6 +124,11 @@ sources:
             description: Contract start date as text.
       - name: RAW_INGREDIENTS
         identifier: RAW_INGREDIENTS
+        # Tier C. No timestamp column of any kind. Warehouse metadata is the only option here.
+        config:
+          freshness:
+            warn_after: {count: 7, period: day}
+            error_after: {count: 30, period: day}
         description: Raw ingredient catalog.
         columns:
           - name: INGREDIENT_ID
@@ -93,6 +150,12 @@ sources:
             description: Harvest season.
       - name: RAW_POTIONS
         identifier: RAW_POTIONS
+        # Tier C. INTRODUCED_AT only moves when a new potion is launched, which can be months
+        # apart, so it is useless as a staleness signal. Warehouse metadata instead.
+        config:
+          freshness:
+            warn_after: {count: 7, period: day}
+            error_after: {count: 30, period: day}
         description: Raw potion catalog.
         columns:
           - name: POTION_SKU
@@ -116,6 +179,20 @@ sources:
             description: Introduction date as text.
       - name: RAW_POTION_INGREDIENTS
         identifier: RAW_POTION_INGREDIENTS
+        # Tier C, moved here from Tier B after a real freshness run showed the inconsistency.
+        #
+        # It first borrowed RAW_POTIONS' INTRODUCED_AT as a loaded_at_query. That was wrong on
+        # its own terms: INTRODUCED_AT is when a potion was *launched*, which is historical and
+        # says nothing about when recipe rows were loaded — so the child errored on an event
+        # clock while its own parent, measured by warehouse metadata, only warned. Same data,
+        # two verdicts.
+        #
+        # Recipe lines have no clock of their own, so they get the same treatment as the
+        # catalog they belong to.
+        config:
+          freshness:
+            warn_after: {count: 7, period: day}
+            error_after: {count: 30, period: day}
         description: Raw potion recipe bridge.
         columns:
           - name: POTION_SKU
@@ -132,6 +209,17 @@ sources:
             description: Recipe unit.
       - name: RAW_ORDERS
         identifier: RAW_ORDERS
+        # Tier A. Orders land continuously, so the newest ORDERED_AT is a fair proxy for how
+        # current this table is. Caveat worth knowing: this reads max() across the whole table,
+        # so in-store and courier-owl orders — which land immediately — keep it green even
+        # while marketplace data sits two days behind. Freshness proves the table is loading.
+        # It does not prove the day is complete. That gap is why question bank Q3 is a
+        # documentation problem and not a monitoring one.
+        config:
+          loaded_at_field: try_to_timestamp_ntz(ORDERED_AT)
+          freshness:
+            warn_after: {count: 24, period: hour}
+            error_after: {count: 48, period: hour}
         description: Raw order headers.
         columns:
           - name: ORDER_ID
@@ -153,6 +241,15 @@ sources:
             description: Order discount in copper coins as text.
       - name: RAW_ORDER_ITEMS
         identifier: RAW_ORDER_ITEMS
+        # Tier B. Order lines carry no timestamp of their own but land in the same load as
+        # their order headers, so this borrows the parent's clock. If lines ever start arriving
+        # separately from headers, this check goes silently wrong — which is the trade-off you
+        # accept for measuring a table that cannot measure itself.
+        config:
+          loaded_at_query: "select max(try_to_timestamp_ntz(ORDERED_AT)) from RAW.MERLINCO_APOTHECARIES.RAW_ORDERS"
+          freshness:
+            warn_after: {count: 24, period: hour}
+            error_after: {count: 48, period: hour}
         description: Raw order line items.
         columns:
           - name: ORDER_ITEM_ID
@@ -170,6 +267,12 @@ sources:
             description: Unit price in copper coins as text.
       - name: RAW_PAYMENTS
         identifier: RAW_PAYMENTS
+        # Tier A. Payment attempts follow orders closely, so the same thresholds apply.
+        config:
+          loaded_at_field: try_to_timestamp_ntz(PAID_AT)
+          freshness:
+            warn_after: {count: 24, period: hour}
+            error_after: {count: 48, period: hour}
         description: Raw payment attempts.
         columns:
           - name: PAYMENT_ID
@@ -189,6 +292,11 @@ sources:
             description: Payment timestamp as text.
       - name: RAW_GUILDS
         identifier: RAW_GUILDS
+        # Tier C. FOUNDED_YEAR is a year, and a historical one at that. Warehouse metadata.
+        config:
+          freshness:
+            warn_after: {count: 30, period: day}
+            error_after: {count: 90, period: day}
         description: Raw guild dimension.
         columns:
           - name: GUILD_ID
@@ -202,6 +310,13 @@ sources:
             description: Guild founded year as text.
       - name: RAW_GUILD_MEMBERSHIPS
         identifier: RAW_GUILD_MEMBERSHIPS
+        # Tier C. VALID_FROM is when a membership started, not when the row arrived, and
+        # backdated memberships are normal — so an event-time check here would be actively
+        # misleading. Warehouse metadata instead.
+        config:
+          freshness:
+            warn_after: {count: 7, period: day}
+            error_after: {count: 30, period: day}
         description: Raw customer guild membership intervals.
         columns:
           - name: MEMBERSHIP_ID
@@ -221,6 +336,13 @@ sources:
             description: Membership end date as text.
       - name: RAW_BREW_EVENTS
         identifier: RAW_BREW_EVENTS
+        # Tier A. Shops brew daily but not every shop every day, so the error threshold is
+        # looser than orders — a quiet weekend across all fifteen shops is plausible.
+        config:
+          loaded_at_field: try_to_timestamp_ntz(BREWED_AT)
+          freshness:
+            warn_after: {count: 24, period: hour}
+            error_after: {count: 72, period: hour}
         description: Raw potion production events.
         columns:
           - name: BREW_ID

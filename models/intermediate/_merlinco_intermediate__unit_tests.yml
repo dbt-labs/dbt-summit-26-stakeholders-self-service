@@ -35,14 +35,19 @@ unit_tests:
         - {order_id: O1, payment_attempt_count: 3, successful_payment_count: 1, failed_payment_count: 1, refunded_payment_count: 1, successful_payment_gold: 10.00, failed_payment_gold: 4.00, refunded_payment_gold: 2.00}
 
   - name: test_merlinco_current_guild_membership_filter
-    description: Keeps only memberships active as of current_date.
+    description: >
+      Keeps only memberships running as of the current date. Fixtures are pinned relative to
+      run time rather than hard-coded: an open interval that started well in the past, a closed
+      interval that ended well in the past, and one that starts well in the future. Hard-coded
+      years were a time bomb here — this repo stays public, and a fixture dated 2027 silently
+      becomes "current" in 2027.
     model: int_merlinco_current_guild_memberships
     given:
       - input: ref('stg_merlinco_guild_memberships')
         rows:
-          - {membership_id: M1, customer_id: C1, guild_id: G1, membership_tier: adept, valid_from: '2026-01-01', valid_to: null}
-          - {membership_id: M2, customer_id: C1, guild_id: G2, membership_tier: apprentice, valid_from: '2025-01-01', valid_to: '2025-12-31'}
-          - {membership_id: M3, customer_id: C2, guild_id: G1, membership_tier: archmage, valid_from: '2027-01-01', valid_to: null}
+          - {membership_id: M1, customer_id: C1, guild_id: G1, membership_tier: adept, valid_from: "{{ (modules.datetime.date.today() - modules.datetime.timedelta(days=365)).isoformat() }}", valid_to: null}
+          - {membership_id: M2, customer_id: C1, guild_id: G2, membership_tier: apprentice, valid_from: "{{ (modules.datetime.date.today() - modules.datetime.timedelta(days=730)).isoformat() }}", valid_to: "{{ (modules.datetime.date.today() - modules.datetime.timedelta(days=400)).isoformat() }}"}
+          - {membership_id: M3, customer_id: C2, guild_id: G1, membership_tier: archmage, valid_from: "{{ (modules.datetime.date.today() + modules.datetime.timedelta(days=365)).isoformat() }}", valid_to: null}
     expect:
       rows:
         - {membership_id: M1, customer_id: C1, guild_id: G1, membership_tier: adept}
@@ -64,14 +69,16 @@ unit_tests:
         - {ingredient_id: I2, ingredient_name: Sun Petal, supplier_id: S2, supplier_name: null, unit: vial, unit_cost_copper: 50.00, unit_cost_gold: 0.50, is_hazardous: false, harvest_season: summer}
 
   - name: test_merlinco_membership_current_flag
-    description: Marks is_current_membership true only for the currently active membership.
+    description: >
+      Marks is_current_membership true only for the interval covering today. Fixtures are
+      relative to run time for the same reason as the test above.
     model: int_merlinco_customer_guild_memberships
     given:
       - input: ref('stg_merlinco_guild_memberships')
         rows:
-          - {membership_id: M1, customer_id: C1, guild_id: G1, membership_tier: adept, valid_from: '2025-01-01', valid_to: '2025-12-31'}
-          - {membership_id: M2, customer_id: C1, guild_id: G2, membership_tier: apprentice, valid_from: '2026-01-01', valid_to: null}
-          - {membership_id: M3, customer_id: C2, guild_id: G1, membership_tier: archmage, valid_from: '2027-01-01', valid_to: null}
+          - {membership_id: M1, customer_id: C1, guild_id: G1, membership_tier: adept, valid_from: "{{ (modules.datetime.date.today() - modules.datetime.timedelta(days=730)).isoformat() }}", valid_to: "{{ (modules.datetime.date.today() - modules.datetime.timedelta(days=400)).isoformat() }}"}
+          - {membership_id: M2, customer_id: C1, guild_id: G2, membership_tier: apprentice, valid_from: "{{ (modules.datetime.date.today() - modules.datetime.timedelta(days=365)).isoformat() }}", valid_to: null}
+          - {membership_id: M3, customer_id: C2, guild_id: G1, membership_tier: archmage, valid_from: "{{ (modules.datetime.date.today() + modules.datetime.timedelta(days=365)).isoformat() }}", valid_to: null}
     expect:
       rows:
         - {membership_id: M1, customer_id: C1, guild_id: G1, membership_tier: adept, is_current_membership: false}

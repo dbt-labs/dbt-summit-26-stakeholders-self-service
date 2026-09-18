@@ -1,10 +1,91 @@
+version: 2
+
+# Registered consumers. Before these exist, every change is a guess about impact and you will
+# guess wrong; after they exist, impact analysis is a lookup. An exposure is a claim made
+# *about* a model from outside it, which is why it lives here rather than in the model's file.
+#
+# Filename is `exposures.yml`, no leading underscore — matching the path labs/03 tells attendees
+# to create.
+#
+# `type` and `owner` are both required — leaving type out fails with `missing field type`
+# (dbt1013).
+
 exposures:
   - name: customer_ltv_dashboard
     type: dashboard
+    maturity: high
     url: https://bi.merlinco.example/dashboards/customer-ltv
-    description: Customer lifetime value, reviewed weekly by retail ops.
+    description: >
+      Customer lifetime value and repeat-purchase rates, reviewed weekly by retail ops. Uses
+      the buying_customers metric rather than a row count, so the non-buyer trap is handled in
+      the dashboard rather than left to the reader.
     depends_on:
+      - ref('fct_customer_lifetime_value')
+      - ref('dim_customers')
+    owner:
+      name: Commerce Analytics
+      email: commerce-analytics@merlinco.example
+
+  - name: regional_revenue_report
+    type: dashboard
+    maturity: high
+    url: https://bi.merlinco.example/dashboards/regional-revenue
+    description: >
+      Potion revenue by region against shop targets, for the regional directors. Reports on
+      *shop* region; the customer home region cut is a separate tab, labelled as such. This is
+      question bank Q1, settled in the report rather than re-argued each quarter.
+    depends_on:
+      - ref('fct_order_items')
+      - ref('dim_shops')
+      - ref('dim_customers')
+      - ref('dim_potions')
+    owner:
+      name: Commerce Analytics
+      email: commerce-analytics@merlinco.example
+
+  - name: retail_ops_daily_sales
+    type: dashboard
+    maturity: medium
+    url: https://bi.merlinco.example/dashboards/daily-sales
+    description: >
+      Daily order volume and value for the head of retail ops. Carries a standing note that
+      the most recent two days are incomplete because marketplace orders arrive late — the
+      documentation fix for question bank Q3.
+    depends_on:
+      - ref('fct_orders')
+      - ref('dim_shops')
+    owner:
+      name: Commerce Analytics
+      email: commerce-analytics@merlinco.example
+
+  - name: guild_partnerships_review
+    type: analysis
+    maturity: medium
+    url: https://bi.merlinco.example/dashboards/guild-partnerships
+    description: >
+      Membership counts and member spend by guild, for the guild partnerships manager. Filters
+      on is_current_membership and counts wizards distinctly, which is what keeps the fan-out
+      in question bank Q2 from inflating both numbers.
+    depends_on:
+      - ref('fct_customer_guild_memberships')
+      - ref('dim_guilds')
       - ref('fct_customer_lifetime_value')
     owner:
       name: Commerce Analytics
       email: commerce-analytics@merlinco.example
+
+  - name: brew_quality_scorecard
+    type: dashboard
+    maturity: low
+    url: https://bi.merlinco.example/dashboards/brew-quality
+    description: >
+      Batch pass rates and estimated production cost by shop and potion, for shop operations.
+      Uses sellable_units_brewed rather than batch_size, so failed batches do not count as
+      output.
+    depends_on:
+      - ref('fct_brew_events')
+      - ref('dim_potions')
+      - ref('dim_shops')
+    owner:
+      name: Supply Chain Analytics
+      email: supply-chain-analytics@merlinco.example

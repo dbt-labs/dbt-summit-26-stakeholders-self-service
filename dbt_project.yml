@@ -8,11 +8,28 @@ config-version: 2
 # This setting configures which "profile" dbt uses for this project.
 profile: 'merlin-co'
 
-# dbt Cloud/Platform project metadata — enables Catalog (beta) Platform enrichment
-# and dbt CLI / Mesh project resolution in the dbt VS Code Extension
+# dbt platform project metadata — enables Catalog (beta) platform enrichment
+# and dbt CLI / Mesh project resolution in the dbt VS Code Extension.
+#
+# Left commented out because this repo is run from many different accounts (the workshop
+# environment, attendees' own Snowflake, CI). Uncomment and fill in for a real project.
 # dbt-cloud:
 #   project-id: "123456"
 #   account-host: "ab123.us1.dbt.com"
+
+# Without the dbt-cloud block above, every invocation emits
+# `InvalidConfig (dbt1005): Skipping semantic manifest validation`.
+#
+# Do not reflexively suppress that warning. It is load-bearing: it is telling you that the
+# semantic models and metrics in this project have NOT been checked, and a locally clean
+# `dbt parse` says nothing about whether they are valid. Suppressing it during the build of
+# this branch hid three genuine errors — duplicate dimension/primary-entity pairings between
+# dim_customers and fct_customer_lifetime_value — which only surfaced on a platform run.
+#
+# DBT_ENGINE_NO_WARN_SEMANTIC_MANIFEST_VALIDATION=1 exists and will silence it. Reach for it
+# only when you have already validated in the platform. CI deliberately does not set it; it
+# allow-lists this one warning by message instead, so the warning stays visible in the log
+# while everything else still fails the build.
 
 
 # These configurations specify where dbt should look for different types of files.
@@ -41,11 +58,32 @@ clean-targets:         # directories to be removed by `dbt clean`
 # continue to be built as views. These settings can be overridden in the individual model files
 # using the `{{ config(...) }}` macro.
 
+# Layer defaults do the structural work so individual models don't repeat themselves.
+#
+# `access` and `group` are set per layer rather than per model, which makes the line between
+# data product and implementation detail a property of *where a model lives* rather than of
+# whether someone remembered. Marts opt into `access: public` individually — promotion is
+# deliberate, and the default stays `protected`.
+#
+# `docs: show: false` on staging and intermediate is how "staging and intermediate shouldn't be
+# discoverable as products at all" stops being a policy statement and starts being enforced.
 models:
   dbt_summit_26_stakeholders_self_service:
     staging:
       +materialized: view
+      +group: merlinco_platform
+      +access: protected
+      +docs:
+        show: false
+      +tags: ['layer:staging']
     intermediate:
       +materialized: view
+      +group: merlinco_platform
+      +access: protected
+      +docs:
+        show: false
+      +tags: ['layer:intermediate']
     marts:
       +materialized: table
+      +access: protected
+      +tags: ['layer:marts']

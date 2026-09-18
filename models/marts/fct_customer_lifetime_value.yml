@@ -1,98 +1,254 @@
 version: 2
 
+# REFERENCE IMPLEMENTATION — the Lab 1 model, fully worked.
+#
+# The prose lives in a doc block in _marts__docs.md rather than inline here, so the same
+# wording reaches Catalog, the Semantic Layer and Copilot from one place.
+#
+# Note which columns carry grain / intended_use / caveats: five of twenty-three. They are the
+# ones where two people would defend two different numbers. The other eighteen get a plain
+# description, because twenty-three columns each carrying three keys of boilerplate is how a
+# catalog stops being read.
+
 models:
   - name: fct_customer_lifetime_value
-    description: >
-      Lifetime summary for every customer who has ever signed up, whether or not
-      they've placed an order.
- 
-      Use this for lifetime revenue, order counts, and repeat-purchase questions
-      at the customer level. It does not contain any guild or membership
-      information 
- 
-      Two things produce a wrong-but-believable number here. First, this
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
-      
+    description: |
+      Everything Merlin & Co. knows about one wizard's buying history, summarized into a single
+      row each.
+
+      **When to use it.** Lifetime spend, order counts, first and last purchase dates, and
+      repeat-buyer questions at the level of an individual customer. Good for cohort work,
+      loyalty segmentation, and "who are our best customers".
+
+      **Not** for guild questions — there is no guild or membership information here at all. For
+      those, start from `fct_customer_guild_memberships`, and read its caveats first: a wizard
+      can hold several memberships over time, so counting customers after bringing membership
+      alongside will inflate the count unless you keep only current memberships.
+
+      **Grain.** One row per wizard who has ever signed up — including the ones who have never
+      bought anything. That is roughly the whole signup list, not the buyer list.
+
+      **Watch out for:**
+
+      - **Non-buyers are in here, and they are counted.** Counting rows gives you signed-up
+        wizards, not customers who bought something. Filter on `has_ordered` first. This single
+        thing is the most common wrong-but-believable number this data produces.
+      - **Absence looks different depending on which column you read.** For a wizard who never
+        ordered, the spend columns show `0` but `average_order_value` shows nothing at all
+        (empty). So an average over the spend columns is dragged down toward zero by non-buyers,
+        while an average over `average_order_value` silently skips them. Same row, two different
+        meanings of "nothing".
+      - **"Average order value" means three different things in this project.** The column here
+        is one of them. See the column's own notes before you put it in front of anyone.
+      - **`days_since_last_order` moves on its own.** It is measured against the day the data
+        was last refreshed, so the same wizard's number changes overnight with no new purchase.
+        Never screenshot it as a fixed figure.
+      - **Returned purchases are still counted as spend** in every lifetime column except
+        `returned_revenue`, which isolates them. Cancelled purchases are excluded throughout.
+    semantic_model:
+      enabled: true
+    # first_order_date, not signed_up_date: dim_customers is the owner of the customer's
+    # descriptive dimensions, and a dimension can only be paired with a primary entity once
+    # across the whole project. Lifetime metrics sliced by first-order cohort is the standard
+    # cut anyway — but see the note on the metrics below about who drops out.
+    agg_time_dimension: first_order_date
     config:
+      access: public
       group: commerce_analytics
+      contract:
+        enforced: true
+      tags: ['certified', 'data_product']
       meta:
         maturity: production
         owner:
           name: Commerce Analytics
         support_channel: '#commerce-analytics-support'
         response_sla: '2 business hours for trust incidents'
-        grain: One row per customer who has ever signed up — including customers who have never placed an order.
-        intended_use: "Use for lifetime revenue, order counts, and repeat-purchase questions at the customer level."
-        caveats: "Includes customers who never ordered, so filter on has_ordered before summing or averaging revenue columns. 'Average order value' is not a single number in this project"
+        certified_on: '2026-09-17'
+        grain: "One row per wizard who has ever signed up — including the ones who have never placed an order."
+        intended_use: "Lifetime spend, order counts, and repeat-purchase questions about an individual customer. Not for guild questions: there is no guild information here at all."
+        caveats: "Non-buyers are included and are counted, so filter on has_ordered before counting customers or averaging spend. Absence looks different column to column — spend columns show 0 for a non-buyer, average_order_value shows nothing at all. 'Average order value' means three different things in this project. And days_since_last_order moves overnight without the data changing."
+
+    # A note that applies to every metric here: the time axis is first_order_date, which is
+    # empty for wizards who never bought. Sliced by time, non-buyers drop out entirely; asked
+    # for as a single total, they are included wherever the column they sum is 0 rather than
+    # empty. lifetime_customers is the one to watch — its total counts non-buyers and its
+    # time series does not.
+    metrics:
+      - name: lifetime_customers
+        type: simple
+        label: Signed-up Customers
+        description: >
+          Every wizard on the signup list, whether or not they ever bought anything. This is
+          deliberately not "customers" — see buying_customers for that. Careful with a time
+          slice: the time axis of this data product is first purchase date, so a wizard who
+          never bought has no date to sit on and falls out of any trend.
+        agg: count_distinct
+        expr: customer_id
+      - name: buying_customers
+        type: simple
+        label: Buying Customers
+        description: >
+          Wizards who have placed at least one billable order. This is the number to reach for
+          when someone asks "how many customers do we have".
+        agg: count_distinct
+        expr: case when has_ordered then customer_id end
+      - name: lifetime_revenue
+        type: simple
+        label: Lifetime Revenue
+        description: Net lifetime spend in gold, cancellations excluded, returns included at full value.
+        agg: sum
+        expr: lifetime_net_revenue
+      - name: average_order_value_per_customer
+        type: simple
+        label: Average Order Value (per customer)
+        description: >
+          The average of each buying wizard's own average order value — an average of averages,
+          where a wizard with one order counts as much as one with fifty. This is the third and
+          least intuitive of the three things called "average order value" in this project. For
+          the order-weighted figure most people actually mean, use
+          average_order_value_per_billable_order on fct_orders.
+        agg: average
+        expr: average_order_value
+      - name: repeat_customer_rate
+        type: ratio
+        label: Repeat Customer Rate
+        description: >
+          Share of buying wizards who have placed more than one billable order. Denominator is
+          buyers, not signups — which is the choice that makes this number mean anything.
+        numerator: repeat_customers
+        denominator: buying_customers
+      - name: repeat_customers
+        type: simple
+        label: Repeat Customers
+        description: Wizards with more than one billable order.
+        agg: count_distinct
+        expr: case when is_repeat_customer then customer_id end
 
     columns:
-
       - name: customer_id
-        description: "The customer's unique identifier. One row per customer_id — including customers who signed up but have never placed an order."
+        description: The unique code for one wizard. One row per wizard, buyers and non-buyers alike.
+        data_type: varchar
+        entity:
+          type: primary
+          name: customer
+        data_tests:
+          - not_null
+          - unique
         config:
           meta:
-            grain: "One value per customer, not per order or per membership."
-            intended_use: "Use to join or count customers. Every signed-up customer has exactly one row, whether or not they've ever ordered."
-            caveats: "Counting rows on this column counts every signed-up customer, not just buyers. If the question is 'how many customers bought something,' filter on has_ordered first."
+            grain: "One value per wizard, not per order and not per guild membership."
+            intended_use: "Counting or identifying customers, and bringing other data alongside."
+            caveats: "Counting these counts every signed-up wizard, not just buyers. If the question is 'how many customers bought something', filter on has_ordered first — or use the buying_customers metric, which does it for you."
 
-
+      # These three are denormalized copies of columns dim_customers owns. They carry
+      # descriptions and data types — they are real columns and a contract covers them — but
+      # deliberately no `dimension:` block. A dimension may be paired with a given primary
+      # entity only once in the project, and dim_customers is the right owner of what a
+      # customer *is*. Group any metric here by the dim_customers version instead; the shared
+      # `customer` entity makes that resolve, and it means the two can never disagree.
       - name: signed_up_date
-        description: ""
+        description: The day the wizard signed up. Group by the dim_customers copy for reporting.
+        data_type: date
       - name: home_region
-        description: ""
+        description: The region the wizard lives in — not the region of the shop they bought from.
+        data_type: varchar
       - name: favored_discipline
-        description: ""
-
-  
-
+        description: The branch of magic the wizard said they favour at signup.
+        data_type: varchar
 
       - name: first_order_date
-        description: "The date of this customer's earliest order, across every shop and channel. Null for a customer who has never ordered."
+        description: The day of this wizard's earliest purchase, across every shop and channel.
+        data_type: date
+        granularity: day
+        dimension:
+          type: time
         config:
           meta:
-            grain: "One date per customer, computed across their whole order history — not per shop or per channel."
-            intended_use: "Use for cohort analysis or time-to-first-order questions. Combine with signed_up_date if you need the gap between signup and first purchase."
-            caveats: "Null does not mean 'unknown' — it means the customer has never placed an order. Excluding nulls silently drops non-buyers instead of counting them as such."
+            grain: "One day per wizard, worked out across their whole history — not per shop and not per channel."
+            intended_use: "Cohort analysis, and time-to-first-purchase questions. Pair it with signed_up_date for the gap between signing up and buying."
+            caveats: "Empty does not mean 'unknown' — it means the wizard has never bought anything. Excluding empties silently drops non-buyers rather than counting them as such, which quietly changes what your cohort is."
 
-
-
-
-        
       - name: last_order_date
-        description: ""
+        description: The day of this wizard's most recent purchase. Empty if they have never bought.
+        data_type: date
+        granularity: day
+        dimension:
+          type: time
       - name: order_count
-        description: ""
+        description: Every purchase the wizard has made, cancellations included. 0 for non-buyers.
+        data_type: number(18,0)
       - name: billable_order_count
-        description: ""
+        description: Purchases excluding cancellations. This is the denominator behind average_order_value.
+        data_type: number(18,0)
+        config:
+          meta:
+            grain: "A count of one wizard's purchases with cancellations taken out. Returns are still counted."
+            intended_use: "The order count to use for anything money-related, because it matches how the spend columns are built."
+            caveats: "Differs from order_count by exactly the wizard's cancellations, so the two disagree for anyone who ever cancelled and both are correct. Returned purchases are counted here and carry their full value — only returned_revenue isolates them."
       - name: completed_order_count
-        description: ""
+        description: Purchases that reached 'completed' — neither cancelled, returned, nor still open.
+        data_type: number(18,0)
       - name: shop_count
-        description: ""
+        description: How many different shops this wizard has ever bought from.
+        data_type: number(18,0)
+        config:
+          meta:
+            grain: "Whole customer history, not per year — a loyal wizard who moved shops once still counts 2."
+            intended_use: "Spotting wizards who spread their buying across shops."
+            caveats: "Shows 0, not empty, for a wizard who has never bought anything, so an average over this column is dragged down by everyone who never bought. It is not a measure of shop performance."
       - name: lifetime_order_item_count
-        description: ""
+        description: Total lines across all the wizard's purchases — three potions on one order counts 3.
+        data_type: number(38,0)
       - name: lifetime_gross_revenue
-        description: ""
+        description: Everything the wizard has spent in gold before discounts, cancellations excluded.
+        data_type: number(18,2)
       - name: lifetime_discount
-        description: ""
+        description: Total discount the wizard has received in gold.
+        data_type: number(18,2)
       - name: lifetime_net_revenue
-        description: ""
+        description: Everything the wizard has spent in gold after discounts. The headline spend figure.
+        data_type: number(18,2)
       - name: returned_revenue
-        description: ""
+        description: The part of lifetime spend that was later returned. Still counted in the columns above.
+        data_type: number(18,2)
       - name: lifetime_collected
-        description: ""
+        description: Gold actually taken from the wizard across all successful payments.
+        data_type: number(18,2)
       - name: lifetime_refunded
-        description: ""
+        description: Gold handed back to the wizard. A positive number — subtract it deliberately.
+        data_type: number(18,2)
       - name: lifetime_net_collected
-        description: ""
+        description: Gold collected less gold refunded. The closest thing here to cash received.
+        data_type: number(18,2)
+
       - name: average_order_value
-        description: ""
+        description: This wizard's own average spend per billable purchase, in gold.
+        data_type: number(18,2)
+        config:
+          meta:
+            grain: "One average per wizard, across their own billable purchases only. It is not an average across orders and it is not a company-wide figure."
+            intended_use: "Comparing one wizard against another, and segmenting customers by how much they spend per visit."
+            caveats: "Three traps in one column. First, there is a metric on fct_orders with this same name that averages across orders rather than customers — different number, both defensible. Second, averaging this column gives a third number again: an average of averages, where a wizard with one purchase counts as much as one with fifty. Use the average_order_value_per_customer metric if that is genuinely what you want, so the choice is on the record. Third, it is empty — not 0 — for any wizard who never placed a billable purchase, so an average silently skips them while an average over the spend columns counts them as zero."
+
       - name: days_to_first_order
-        description: ""
+        description: Days between signing up and buying for the first time. Empty for non-buyers.
+        data_type: number(9,0)
       - name: days_since_last_order
-        description: ""
+        description: Days between the wizard's last purchase and the day the data was refreshed.
+        data_type: number(9,0)
+        config:
+          meta:
+            grain: "One figure per wizard, measured against the refresh date rather than a fixed day."
+            intended_use: "Ranking wizards by how recently they bought, for win-back and churn work. Best used as a relative ordering."
+            caveats: "This moves on its own. The same wizard's figure grows by one every day with no change in the source, so a screenshot goes stale overnight and two reports run a week apart will not reconcile. Never quote it as a fixed number, and never build a threshold on it without saying when it was measured."
       - name: has_ordered
-        description: ""
+        description: Whether the wizard has ever placed a billable purchase. The filter most questions need.
+        data_type: boolean
+        dimension:
+          type: categorical
       - name: is_repeat_customer
-        description: ""
+        description: Whether the wizard has placed more than one billable purchase.
+        data_type: boolean
+        dimension:
+          type: categorical
