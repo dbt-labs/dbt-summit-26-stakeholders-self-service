@@ -6,11 +6,17 @@ models:
       includes customers who never ordered — filter on has_ordered before
       summing or averaging revenue, or you'll understate the average across
       real buyers.
-      
+    config: 
+      tags: meta.grain, meta.intended_use, meta.caveats
+
     columns:
 
       - name: customer_id
-        description:
+        description:  "unique identifier for customer"
+        data tests:
+            - not_null
+            - unique
+            
       - name: signed_up_date
         description: ""
       - name: home_region
@@ -19,7 +25,7 @@ models:
         description: ""
 
       - name: first_order_date
-        description: ""              
+        description: "date customer first ordered a product from our company"              
       - name: last_order_date
         description: ""
       - name: order_count
