@@ -132,8 +132,11 @@ sources:
             description: Recipe unit.
       - name: RAW_ORDERS
         config:
-          loaded_at_field: ORDERED_AT
+          loaded_at_field: try_to_timestamp_ntz(ORDERED_AT)
           freshness:
+            warn_after:
+              count: 24
+              period: hour
             error_after:
               count: 48
               period: hour
