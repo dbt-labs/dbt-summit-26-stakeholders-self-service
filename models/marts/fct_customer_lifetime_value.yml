@@ -18,7 +18,6 @@ models:
         support_channel: '#commerce-analytics-team'
         response_sla: '6 business hours'
         group: commerce_analytics
-        exposures: customer_ltv_dashboard
 
           
       

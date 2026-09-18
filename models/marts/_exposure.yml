@@ -3,3 +3,5 @@ exposures:
     owner: 
       name: Customer Analytics
     type: dashboard
+    depends_on:
+      - ref('fct_customer_lifetime_value')
