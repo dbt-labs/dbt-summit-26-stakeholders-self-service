@@ -10,6 +10,7 @@ models:
       average order value is calculated across billable orders.
 
     config:
+      group: commerce_analytics
       meta:
         owner:
           name: Commerce Analytics
