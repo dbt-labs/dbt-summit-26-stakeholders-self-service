@@ -1,0 +1,8 @@
+exposures:
+  - name: customer_ltv_dashboard
+    label: Customer LTV Dashboard
+    description: Executive summary dashboard tracking lifetime value.
+    type: dashboard # Options: dashboard, notebook, analysis, ml, application
+
+    owner:
+      name: BI Team

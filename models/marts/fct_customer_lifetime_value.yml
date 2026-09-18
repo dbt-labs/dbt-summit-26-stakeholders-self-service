@@ -10,7 +10,10 @@ models:
       roll-up averages.
     
     config:
-      meta : {'grain': 'customer'}
+      meta:
+        owner: 'BI Team'
+        grain: 'customer'
+      group: 'commerce_analytics'
 
     columns:
 
