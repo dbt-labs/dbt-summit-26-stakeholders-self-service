@@ -2,15 +2,23 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
-    description:
-      includes customers who never ordered — filter on has_ordered before
+    description: >
+      Customer lifetime value, grain is one row per customer. 
+      This table includes customers who never ordered — filter on has_ordered before
       summing or averaging revenue, or you'll understate the average across
       real buyers.
+    
+    config: 
+      meta:
+        grain: one row per customer
+        intended_use: cohort analysis
+        caveats: includes customers who never ordered and limited to orders in the past 30 days
+          
       
     columns:
 
       - name: customer_id
-        description:
+        description: "Unique ID of the customer"
       - name: signed_up_date
         description: ""
       - name: home_region
@@ -19,7 +27,7 @@ models:
         description: ""
 
       - name: first_order_date
-        description: ""              
+        description: "Date of customer's first order"              
       - name: last_order_date
         description: ""
       - name: order_count
@@ -37,7 +45,7 @@ models:
       - name: lifetime_discount
         description: ""
       - name: lifetime_net_revenue
-        description: ""
+        description: "Lifetime net revenue for the customer in US dollars"
       - name: returned_revenue
         description: ""
       - name: lifetime_collected
