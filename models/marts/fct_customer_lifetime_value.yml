@@ -6,7 +6,6 @@ models:
       includes customers who never ordered — filter on has_ordered before
       summing or averaging revenue, or you'll understate the average across
       real buyers.
-    config: 
 
     columns:
 
