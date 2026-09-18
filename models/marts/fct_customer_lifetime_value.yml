@@ -18,6 +18,7 @@ models:
           buyer-only analysis. Lifetime revenue excludes cancelled orders but
           includes returned orders, which are tracked separately in
           `returned_revenue`.
+        owner: commerce_analytics
 
     columns:
 

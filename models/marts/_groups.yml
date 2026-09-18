@@ -1,0 +1,7 @@
+# models_/groups.yml
+groups:
+  - name: commerce_analytics
+    description: "All commerce analytics related models."
+    owner:
+      name: Commerce Analytics Team
+      email: commerce.analytics@jaffleshop.com

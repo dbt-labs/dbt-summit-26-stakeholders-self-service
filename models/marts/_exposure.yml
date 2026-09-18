@@ -1,0 +1,13 @@
+version: 2
+
+exposures:
+  - name: customer_ltv_dashboard
+    type: dashboard
+    label: Customer Lifetime Value Dashboard
+    owner: commerce_analytics
+    url: https://example.com
+    maturity: high
+    description: >
+      A high-level dashboard tracking customer lifetime value metrics.
+    depends_on:
+      - ref('fct_customer_lifetime_value')
