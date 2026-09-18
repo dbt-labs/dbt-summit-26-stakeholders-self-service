@@ -7,11 +7,15 @@ models:
       summing or averaging revenue, or you'll understate the average across
       real buyers.
     config: 
-      
+
     columns:
 
       - name: customer_id
         description: Unique customer identification
+        tests:
+          - not_null
+          - unique
+          
       - name: signed_up_date
         description: ""
       - name: home_region
@@ -33,6 +37,8 @@ models:
         description: ""
       - name: lifetime_order_item_count
         description: ""
+        tests:
+          - not_null
       - name: lifetime_gross_revenue
         description: ""
       - name: lifetime_discount
