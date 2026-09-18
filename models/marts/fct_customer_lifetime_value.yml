@@ -10,40 +10,40 @@ models:
     columns:
 
       - name: customer_id
-        description:
+        description: "Unique organization generated identifier for customer"
       - name: signed_up_date
-        description: ""
+        description: "Date the customer signed first completed purchase order.  Not the date customer received or paid first order.  Incomplete or cancelled orders do not count."
       - name: home_region
-        description: ""
+        description: "Geographic region of customer account on file according to internal sales region."
       - name: favored_discipline
-        description: ""
+        description: "Type of martial arts the customer prefers (kung fu, karate, MMA)."
 
       - name: first_order_date
-        description: ""              
+        description: "Date of first completed order EST."              
       - name: last_order_date
-        description: ""
+        description: "Date of most recent completed order for customer."
       - name: order_count
-        description: ""
+        description: "Count of total uncancelled orders completed by customer since signed up date."
       - name: billable_order_count
-        description: ""
+        description: "Count of billable orders since signed up date."
       - name: completed_order_count
-        description: ""
+        description: "Count of completed orders for customer since sign up date."
       - name: shop_count
-        description: ""
+        description: "Total number of chops on file for the customer, defined by unique addresses."
       - name: lifetime_order_item_count
-        description: ""
+        description: "Total number of items ordered in uncancelled orders since sign up date."
       - name: lifetime_gross_revenue
-        description: ""
+        description: "Total revenue captured (paid without refund)."
       - name: lifetime_discount
-        description: ""
+        description: "Lifetime discount."
       - name: lifetime_net_revenue
-        description: ""
+        description: "Lifetime net revenue"
       - name: returned_revenue
-        description: ""
+        description: "returned revenue"
       - name: lifetime_collected
-        description: ""
+        description: "lifetime collected"
       - name: lifetime_refunded
-        description: ""
+        description: "lifetime refunded."
       - name: lifetime_net_collected
         description: ""
       - name: average_order_value
