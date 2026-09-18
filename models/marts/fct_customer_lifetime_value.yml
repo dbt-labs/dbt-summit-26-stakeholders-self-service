@@ -2,15 +2,34 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
-    description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
-      
+    description: >-
+      One row per customer, including customers with no billable orders. Combines
+      customer signup and profile attributes with lifetime order, shop, item,
+      revenue, collection, and refund measures, plus average order value and
+      ordering behavior flags. Revenue measures exclude cancelled orders, and
+      average order value is calculated across billable orders.
+
+    config:
+      meta:
+        grain: One row per customer.
+        intended_use: >-
+          Customer-level lifetime value analysis, buyer segmentation, retention
+          analysis, and ordering behavior reporting.
+        caveats: >-
+          Includes customers with no billable orders; use has_ordered when analysis
+          should include buyers only. Revenue measures exclude cancelled orders,
+          average_order_value is null when a customer has no billable orders, and
+          lifetime and recency measures reflect data available at the latest build
+          rather than a historical point-in-time snapshot.
+
     columns:
 
       - name: customer_id
-        description:
+        description: Customer identifier; defines the model's one-row-per-customer grain.
+        data_tests:
+          - not_null
+          - unique
+
       - name: signed_up_date
         description: ""
       - name: home_region
@@ -19,7 +38,10 @@ models:
         description: ""
 
       - name: first_order_date
-        description: ""              
+        description: >-
+          Date of the customer's earliest recorded order, including cancelled
+          orders. Null when the customer has no recorded orders.
+
       - name: last_order_date
         description: ""
       - name: order_count
@@ -37,7 +59,14 @@ models:
       - name: lifetime_discount
         description: ""
       - name: lifetime_net_revenue
-        description: ""
+        description: >-
+          Total net item revenue in gold after allocated discounts across all
+          non-cancelled orders. Revenue from returned orders remains included and
+          is also reported separately in returned_revenue. Zero when the customer
+          has no non-cancelled orders.
+        data_tests:
+          - not_null
+
       - name: returned_revenue
         description: ""
       - name: lifetime_collected
