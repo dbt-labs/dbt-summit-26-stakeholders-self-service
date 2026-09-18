@@ -25,6 +25,9 @@ models:
     columns:
       - name: customer_id
         description: Primary identifier for the customer represented by the row.
+        data_tests:
+          - not_null
+          - unique
 
       - name: signed_up_date
         description: Date the customer account was created; use this to define onboarding cohorts.
@@ -64,6 +67,8 @@ models:
 
       - name: lifetime_net_revenue
         description: Net revenue in gold from all non-cancelled customer orders after discounts; this is the revenue-based customer lifetime value field.
+        data_tests:
+          - not_null
 
       - name: returned_revenue
         description: Net revenue in gold associated with orders whose current status is `returned`.
