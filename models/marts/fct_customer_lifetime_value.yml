@@ -9,11 +9,14 @@ models:
 
       Customers without a billable order have zero-valued order counts and financial measures, while order dates, order-timing measures, and average order value remain null. Use `has_ordered` to restrict buyer-only analyses before calculating revenue or order-value averages; including non-buyers will understate averages intended to represent purchasing customers. `is_repeat_customer` identifies customers with more than one billable order.
     config:
+      group: commerce_analytics
       tags:
         - mart
         - customer_analytics
         - lifetime_value
       meta:
+        owner:
+          name: Commerce Analytics
         subject_area: customer_analytics
         grain: one_row_per_customer
         primary_key: customer_id
