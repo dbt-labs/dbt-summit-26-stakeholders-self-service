@@ -16,6 +16,12 @@ sources:
     schema: MERLINCO_APOTHECARIES
     tables:
       - name: RAW_CUSTOMERS
+        config: 
+          loaded_at_field: SIGNED_UP_AT
+          freshness: 
+            error_after:
+              count: 48
+              period: hour
         identifier: RAW_CUSTOMERS
         description: Raw customer records.
         columns:

@@ -3,23 +3,31 @@ version: 2
 models:
   - name: fct_customer_lifetime_value
     description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
-      
-    columns:
+      The order's current status (pending, paid, shipped, delivered, or cancelled), synced live from the source system.
+      Reflects the current status only. It doesn't keep a history of past changes.
 
+    config:
+      meta:
+        grain: one row per customer
+        intended_use: "cohort and retention analysis"
+        caveats: "excludes orders refunded under 30 days"
+        
+
+    columns:
       - name: customer_id
-        description:
+        description: "Unique customer ID"
+        data_tests:
+          - not_null
+          - unique
       - name: signed_up_date
-        description: ""
+        description: "Date originally signed up to be a part of the system."
       - name: home_region
         description: ""
       - name: favored_discipline
         description: ""
 
       - name: first_order_date
-        description: ""              
+        description: ""
       - name: last_order_date
         description: ""
       - name: order_count
