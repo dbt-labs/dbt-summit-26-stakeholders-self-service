@@ -2,15 +2,23 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
-    description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
-      
+    description: >
+      Customer-level lifetime value mart with one row per customer, including
+      customers who have never placed a billable order. Combines signup and
+      segmentation attributes with all-time order activity, revenue, collections,
+      refunds, purchase frequency, and recency measures as of the latest model
+      refresh. Revenue measures exclude cancelled orders, while
+      lifetime_net_collected represents successful collections less refunds.
+      Use has_ordered for buyer-only analysis—especially averages—to prevent
+      zero-value non-buyers from understating customer value.
+    meta:
+      grain: One row per customer
+      intended_use: Assessing the overall customer activity
+      caveats: includes customers who never ordered — filter on has_ordered before
+      summing or averaging revenue
     columns:
-
       - name: customer_id
-        description:
+        description: The unique identifier for a customer
       - name: signed_up_date
         description: ""
       - name: home_region
@@ -19,7 +27,7 @@ models:
         description: ""
 
       - name: first_order_date
-        description: ""              
+        description: The first date the customer placed an order             
       - name: last_order_date
         description: ""
       - name: order_count
@@ -37,7 +45,7 @@ models:
       - name: lifetime_discount
         description: ""
       - name: lifetime_net_revenue
-        description: ""
+        description: The total, aggregate net revenue across all orders
       - name: returned_revenue
         description: ""
       - name: lifetime_collected
