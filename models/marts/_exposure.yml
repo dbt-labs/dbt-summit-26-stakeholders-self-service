@@ -1,0 +1,5 @@
+exposures:
+  - name: customer_ltv_dashboard
+    owner: 
+      name: Customer Analytics
+    type: dashboard
