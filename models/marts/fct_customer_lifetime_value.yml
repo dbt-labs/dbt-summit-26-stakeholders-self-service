@@ -24,6 +24,9 @@ models:
 
       - name: customer_id
         description: Primary identifier for the customer and the grain of this model.
+        data_tests:
+          - unique
+          - not_null
       - name: signed_up_date
         description: ""
       - name: home_region
