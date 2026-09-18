@@ -6,20 +6,29 @@ models:
       includes customers who never ordered — filter on has_ordered before
       summing or averaging revenue, or you'll understate the average across
       real buyers.
+
+
+
+
       
     columns:
+   
 
       - name: customer_id
-        description:
+        description: unique customer id generated from salesforce
+        tests:
+          - not_null
+          - unique
+          
       - name: signed_up_date
-        description: ""
+        description: "a"
       - name: home_region
-        description: ""
+        description: "b"
       - name: favored_discipline
-        description: ""
+        description: "c"
 
       - name: first_order_date
-        description: ""              
+        description: the date that the customer placed their first order      
       - name: last_order_date
         description: ""
       - name: order_count
