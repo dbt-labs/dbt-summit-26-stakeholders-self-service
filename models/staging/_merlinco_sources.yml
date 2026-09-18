@@ -139,6 +139,12 @@ sources:
       - name: RAW_ORDERS
         identifier: RAW_ORDERS
         description: Raw order headers.
+        config:
+          loaded_at_field: SIGNED_UP_AT
+          freshness:
+            error_after:
+              count: 48
+              period: hour
         columns:
           - name: ORDER_ID
             description: Primary order identifier.
