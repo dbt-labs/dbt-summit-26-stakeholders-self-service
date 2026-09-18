@@ -3,23 +3,38 @@ version: 2
 models:
   - name: fct_customer_lifetime_value
     description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
+      Customer lifetime value mart at one row per customer, including signup attributes, order activity, 
+      lifetime revenue and collection metrics, and repeat-customer indicators. Includes customers who
+      have never ordered; filter on has_ordered when calculating buyer-level revenue averages
+    config:
+      meta:
+        grain: "One row per customer."
+        intended_use:
+          - "Analyze realized customer lifetime revenue and collections."
+          - "Compare signup cohorts, regions, favored disciplines, and repeat-customer behavior."
+        caveats:
+          - "Includes customers who have never ordered; filter on has_ordered for buyer-level revenue averages."
+          - "Lifetime value fields are realized-to-date measures through the latest available order data, not predictive forecasts."
+
+
       
     columns:
 
       - name: customer_id
-        description:
+        description: "Internal customer identifier."
+        data_tests:
+          - not_null
+          - unique
+
       - name: signed_up_date
-        description: ""
+        description: "Date when the customer signed up"
       - name: home_region
         description: ""
       - name: favored_discipline
         description: ""
 
       - name: first_order_date
-        description: ""              
+        description: "Date when the customer place their first order"              
       - name: last_order_date
         description: ""
       - name: order_count
