@@ -13,6 +13,12 @@ models:
         grain: one row per customer
         intended_use: cohort analysis
         caveats: includes customers who never ordered and limited to orders in the past 30 days
+        owner: 
+          name: Commerce Analytics
+        support_channel: '#commerce-analytics-team'
+        response_sla: '6 business hours'
+        group: commerce_analytics
+
           
       
     columns:
