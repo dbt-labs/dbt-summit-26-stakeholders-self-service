@@ -10,6 +10,9 @@ models:
     columns:
 
       - name: customer_id
+        data_tests:
+          - unique
+          - not_null
         description: "unique identifier joins to dim_customers"
         config:
           meta: {'grain': 'one row per customer',
@@ -24,7 +27,8 @@ models:
 
       - name: first_order_date
         description: "first date customer submitted an order successfuly" 
-        meta: {'grain': 'one row per customer',
+        config:
+          meta: {'grain': 'one row per customer',
                 'intended_use': 'slice order dates',
                 'caveats': 'will be NULL for customers who never ordered'}             
       - name: last_order_date
