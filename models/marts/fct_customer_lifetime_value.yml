@@ -2,24 +2,48 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
-    description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
-      
+    description: >-
+      Customer lifetime value mart with one row per customer, including customers
+      who have never placed a billable order. It combines customer signup attributes
+      with lifetime order activity, revenue, collections, refunds, and purchase-timing
+      measures. In this model, customer onboarding means the date in `signed_up_date`,
+      and the canonical revenue-based lifetime value measure is
+      `lifetime_net_revenue`. Monetary values are denominated in gold.
+    config:
+      meta:
+        grain: "One row per customer_id, including customers with no orders."
+        intended_use: >-
+          Cohort and segmentation analysis of customer lifetime value, order behavior,
+          conversion from signup to first order, repeat purchasing, and realized cash
+          collection. Use signed_up_date when defining onboarding cohorts.
+        caveats: >-
+          Filter to has_ordered = true when averaging revenue across buyers; including
+          customers who have never ordered will understate buyer-level averages.
+          lifetime_net_revenue includes every non-cancelled order status, including
+          returned and still-open orders, and does not subtract payment refunds; use
+          lifetime_net_collected for realized cash after refunds. days_since_last_order
+          is evaluated relative to the dbt run date, so it changes whenever the model
+          is rebuilt.
+
     columns:
 
       - name: customer_id
-        description:
+        description: >-
+          Stable identifier for the customer and the unique key at this model's
+          one-row-per-customer grain.
       - name: signed_up_date
-        description: ""
+        description: >-
+          Calendar date the customer signed up. Use this field as the customer
+          onboarding date for signup cohort analysis.
       - name: home_region
         description: ""
       - name: favored_discipline
         description: ""
 
       - name: first_order_date
-        description: ""              
+        description: >-
+          Calendar date of the customer's earliest order, regardless of order status.
+          Null when the customer has never placed an order.
       - name: last_order_date
         description: ""
       - name: order_count
@@ -37,7 +61,12 @@ models:
       - name: lifetime_discount
         description: ""
       - name: lifetime_net_revenue
-        description: ""
+        description: >-
+          Canonical revenue-based customer lifetime value in gold. Calculated as
+          lifetime gross item revenue less allocated order discounts across all
+          non-cancelled orders. This measure includes returned and still-open orders
+          and does not subtract payment refunds; use lifetime_net_collected when the
+          analysis requires realized cash after refunds.
       - name: returned_revenue
         description: ""
       - name: lifetime_collected
