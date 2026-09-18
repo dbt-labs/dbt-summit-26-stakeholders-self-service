@@ -3,23 +3,31 @@ version: 2
 models:
   - name: fct_customer_lifetime_value
     description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
-      
+      All customers to date (grain = customer) and their aggregated order information
+      that calculates lifetime value. This includes all-time data at the company.
+      Includes customers who never ordered, which can be filtered with has_ordered = FALSE.
+      The model contains metrics that are both roll-up summations of order variables as well as
+      roll-up averages.
+    
+    config:
+      meta : {'grain': 'customer'}
+
     columns:
 
       - name: customer_id
-        description:
+        description: "Unique ID of the customer in our order system."
+        data_tests:
+          - unique
+          - not_null
       - name: signed_up_date
-        description: ""
+        description: "The date the Customer signed up. Should never be NULL."
       - name: home_region
         description: ""
       - name: favored_discipline
         description: ""
 
       - name: first_order_date
-        description: ""              
+        description: "The date of the Customer's first order. Will be NULL if has_ordered = FALSE."              
       - name: last_order_date
         description: ""
       - name: order_count
@@ -34,6 +42,8 @@ models:
         description: ""
       - name: lifetime_gross_revenue
         description: ""
+        data_tests:
+          - not_null
       - name: lifetime_discount
         description: ""
       - name: lifetime_net_revenue

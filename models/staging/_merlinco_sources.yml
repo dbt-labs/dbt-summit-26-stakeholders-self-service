@@ -131,6 +131,12 @@ sources:
           - name: UNIT
             description: Recipe unit.
       - name: RAW_ORDERS
+        config:
+          loaded_at_field: ORDERED_AT
+          freshness:
+            error_after:
+              count: 48
+              period: hour
         identifier: RAW_ORDERS
         description: Raw order headers.
         columns:
