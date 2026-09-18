@@ -3,23 +3,30 @@ version: 2
 models:
   - name: fct_customer_lifetime_value
     description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
+      Customer lifetime value, one row per customer. Includes customers who never ordered,
+      filter on has_ordered before summing or averaging revenue, or you'll understate the average across
       real buyers.
       
     columns:
 
       - name: customer_id
-        description:
+        description: "unique identifier joins to dim_customers"
+        config:
+          meta: {'grain': 'one row per customer',
+                'intended_use': 'unique identifier and join to other dim tables like dim_customers',
+                'caveats': 'includes customers who never ordered'}
       - name: signed_up_date
-        description: ""
+        description: "date customer signup up"
       - name: home_region
-        description: ""
+        description: "home region of customer (North America, Europe, etc.)"
       - name: favored_discipline
-        description: ""
+        description: "customer discipline (shopping, marketing, sales, etc.)"
 
       - name: first_order_date
-        description: ""              
+        description: "first date customer submitted an order successfuly" 
+        meta: {'grain': 'one row per customer',
+                'intended_use': 'slice order dates',
+                'caveats': 'will be NULL for customers who never ordered'}             
       - name: last_order_date
         description: ""
       - name: order_count
