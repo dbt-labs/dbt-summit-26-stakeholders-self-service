@@ -3,16 +3,13 @@ version: 2
 models:
   - name: fct_customer_lifetime_value
     description: "table showing lifetime order values per customer"
-    meta:
-      grain: "one row per customer"
-      intended_use: "to determine lifetime order values for each customer"
-      caveats:
-      includes customers who never ordered — filter on has_ordered before summing or averaging revenue, or you'll understate the average across real buyers.
-      
     columns:
 
       - name: customer_id
         description: "unique id for each individual customer"
+        data_tests:
+          - not_null
+          - unique
       - name: signed_up_date
         description: ""
       - name: home_region
@@ -21,7 +18,7 @@ models:
         description: ""
 
       - name: first_order_date
-        description: "first date that a customer ordered a product in their lifetime"              
+        description: "first date that a customer ordered a product in their lifetime"
       - name: last_order_date
         description: ""
       - name: order_count
@@ -34,20 +31,35 @@ models:
         description: ""
       - name: lifetime_order_item_count
         description: ""
+        data_tests:
+          - not_null
       - name: lifetime_gross_revenue
         description: ""
+        data_tests:
+          - not_null
       - name: lifetime_discount
         description: ""
+        data_tests:
+          - not_null
       - name: lifetime_net_revenue
         description: ""
+        data_tests:
+          - not_null
       - name: returned_revenue
         description: ""
       - name: lifetime_collected
         description: ""
+        data_tests:
+          - not_null
       - name: lifetime_refunded
         description: ""
+        data_tests:
+          - not_null
       - name: lifetime_net_collected
         description: ""
+        data_tests:
+          - not_null
+
       - name: average_order_value
         description: "average value in dollars for a customers orders across their lifetime"
       - name: days_to_first_order
@@ -58,3 +70,8 @@ models:
         description: ""
       - name: is_repeat_customer
         description: ""
+    config:
+      meta:
+        grain: "one row per customer"
+        intended_use: "to determine lifetime order values for each customer"
+        caveats: "includes customers who never ordered — filter on has_ordered before summing or averaging revenue, or you'll understate the average across real buyers."
