@@ -41,6 +41,9 @@ models:
         description: >-
           Canonical customer identifier and the unique key for this model. Retained
           from the customer source so customers without orders remain in the output.
+        data_tests:
+          - unique
+          - not_null
 
       - name: signed_up_date
         description: >-
@@ -94,6 +97,8 @@ models:
         description: >-
           Cumulative gross order-item value, denominated in gold, for non-cancelled
           orders before discounts. Returned and open placed orders remain included.
+        data_tests:
+          - not_null
 
       - name: lifetime_discount
         description: >-
@@ -105,6 +110,8 @@ models:
           Cumulative gross revenue less discounts, denominated in gold, for
           non-cancelled orders. Returned order value remains included and is separately
           identified in returned_revenue.
+        data_tests:
+          - not_null
 
       - name: returned_revenue
         description: >-
@@ -126,6 +133,8 @@ models:
         description: >-
           Net cash collected from the customer, denominated in gold, calculated as
           lifetime_collected minus lifetime_refunded.
+        data_tests:
+          - not_null
 
       - name: average_order_value
         description: >-
