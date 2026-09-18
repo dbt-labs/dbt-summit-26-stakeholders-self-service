@@ -1,0 +1,14 @@
+version: 2
+
+exposures:
+  - name: customer_lifetime_value_dashboard
+    label: Customer Lifetime Value Dashboard
+    type: dashboard
+    maturity: low
+    description: >-
+      Mock dashboard for monitoring customer lifetime value, purchasing behavior,
+      and signup cohort performance.
+    depends_on:
+      - ref('fct_customer_lifetime_value')
+    owner:
+      name: "ALAB - Data Engineering"
