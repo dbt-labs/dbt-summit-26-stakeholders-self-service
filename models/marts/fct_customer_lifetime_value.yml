@@ -8,12 +8,13 @@ models:
       Includes customers who never ordered, which can be filtered with has_ordered = FALSE.
       The model contains metrics that are both roll-up summations of order variables as well as
       roll-up averages.
-    
+
     config:
       meta:
         owner: 'BI Team'
         grain: 'customer'
       group: 'commerce_analytics'
+      access: protected
 
     columns:
 
