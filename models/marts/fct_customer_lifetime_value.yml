@@ -19,7 +19,6 @@ models:
           includes returned orders, which are tracked separately in
           `returned_revenue`.
 
-
     columns:
 
       - name: customer_id
