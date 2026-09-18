@@ -2,57 +2,81 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
-    description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
-      
+    description: |
+      Customer-level mart for analyzing lifetime value, purchasing behavior, conversion, retention, and customer segmentation. The model has one row per customer and preserves the full customer population, including customers who have never placed a billable order.
+
+      Lifetime measures summarize each customer's complete order history. Cancelled orders remain part of `order_count` but are excluded from `billable_order_count` and the gross revenue, discount, and net revenue measures. Completed orders are counted separately, returned revenue includes net revenue from returned orders, and collection measures summarize successful payments, refunds, and the resulting net amount collected. `average_order_value` divides lifetime net revenue by billable orders.
+
+      Customers without a billable order have zero-valued order counts and financial measures, while order dates, order-timing measures, and average order value remain null. Use `has_ordered` to restrict buyer-only analyses before calculating revenue or order-value averages; including non-buyers will understate averages intended to represent purchasing customers. `is_repeat_customer` identifies customers with more than one billable order.
+    config:
+      tags:
+        - mart
+        - customer_analytics
+        - lifetime_value
+      meta:
+        subject_area: customer_analytics
+        grain: one_row_per_customer
+        primary_key: customer_id
+        use_cases:
+          - lifetime_value
+          - customer_segmentation
+          - conversion_analysis
+          - retention_analysis
+
     columns:
 
       - name: customer_id
-        description:
+        description: Unique identifier for the customer and the primary key of this model.
+        data_tests:
+          - not_null
+          - unique
+
       - name: signed_up_date
-        description: ""
+        description: Calendar date on which the customer signed up, parsed from the source signup timestamp.
       - name: home_region
-        description: ""
+        description: Canonicalized home region associated with the customer.
       - name: favored_discipline
-        description: ""
+        description: Customer's favored magical discipline, normalized to lowercase.
 
       - name: first_order_date
-        description: ""              
+        description: Earliest date on which the customer placed an order, across all order statuses. Null when the customer has no orders.
       - name: last_order_date
-        description: ""
+        description: Most recent date on which the customer placed an order, across all order statuses. Null when the customer has no orders.
       - name: order_count
-        description: ""
+        description: Total number of orders associated with the customer across all statuses, including cancelled orders. Zero when the customer has no orders.
       - name: billable_order_count
-        description: ""
+        description: Number of customer orders whose status is not `cancelled`. Includes placed, completed, and returned orders and is the denominator for `average_order_value`.
       - name: completed_order_count
-        description: ""
+        description: Number of customer orders with a `completed` status.
       - name: shop_count
-        description: ""
+        description: Number of distinct shops from which the customer has placed an order, across all order statuses.
       - name: lifetime_order_item_count
-        description: ""
+        description: Total number of order-item records across the customer's complete order history, including orders of every status.
       - name: lifetime_gross_revenue
-        description: ""
+        description: Lifetime gross line-item revenue from non-cancelled orders, before discounts, denominated in gold. Zero for customers without qualifying orders.
       - name: lifetime_discount
-        description: ""
+        description: Lifetime discounts allocated to line items on non-cancelled orders, denominated in gold. Zero for customers without qualifying orders.
       - name: lifetime_net_revenue
-        description: ""
+        description: Lifetime net line-item revenue from non-cancelled orders after discounts, denominated in gold. Includes revenue associated with returned orders and is zero for customers without qualifying orders.
+        data_tests:
+          - not_null
+
       - name: returned_revenue
-        description: ""
+        description: Portion of lifetime net revenue associated with orders whose status is `returned`, denominated in gold.
       - name: lifetime_collected
-        description: ""
+        description: Total value of successful customer payments across all orders, denominated in gold and regardless of current order status.
       - name: lifetime_refunded
-        description: ""
+        description: Total value of refunded customer payments across all orders, denominated in gold and regardless of current order status.
       - name: lifetime_net_collected
-        description: ""
+        description: Net cash collected from the customer in gold, calculated as `lifetime_collected - lifetime_refunded`.
       - name: average_order_value
-        description: ""
+        description: Average net revenue per billable order in gold, calculated as `lifetime_net_revenue / billable_order_count`. Null when the customer has no billable orders.
       - name: days_to_first_order
-        description: ""
+        description: Number of calendar days from customer signup to the customer's earliest order. Null when the customer has no orders.
       - name: days_since_last_order
-        description: ""
+        description: Number of calendar days from the customer's most recent order through the current date. Null when the customer has no orders and changes as time advances.
       - name: has_ordered
-        description: ""
+        description: Boolean indicating whether the customer has at least one non-cancelled order. Customers with only cancelled orders are false.
       - name: is_repeat_customer
-        description: ""
+        description: Boolean indicating whether the customer has more than one non-cancelled order.
+
