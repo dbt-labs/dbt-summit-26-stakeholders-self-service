@@ -18,6 +18,12 @@ models:
         caveats: >
           includes customers who never ordered — filter on has_ordered before
           summing or averaging revenue
+        maturity: production
+        owner:
+          name: Commerce Analytics
+        support_channel: '#commerce-analytics-support'
+        response_sla: '2 business hours for trust incidents'
+      group: commerce_analytics
     columns:
       - name: customer_id
         description: The unique identifier for a customer
