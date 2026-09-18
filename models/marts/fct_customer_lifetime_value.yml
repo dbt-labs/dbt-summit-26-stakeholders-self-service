@@ -7,7 +7,8 @@ models:
       Includes customers who never ordered — filter on has_ordered before
       summing or averaging revenue, or you'll understate the average across
       real buyers.
-    config: 
+    config:
+      group: commerce_analytics
       meta:
         grain: one row per customer
         intended_use: cohort and retention analysis
