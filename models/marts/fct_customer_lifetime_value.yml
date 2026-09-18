@@ -42,54 +42,55 @@ models:
         data_type: date
         description: ""
       - name: order_count
-        data_type: number
+        data_type: number(18,0)
         description: ""
       - name: billable_order_count
-        data_type: number
+        data_type: number(13,0)
         description: ""
       - name: completed_order_count
-        data_type: number
+        data_type: number(13,0)
         description: ""
       - name: shop_count
-        data_type: number
+        data_type: number(18,0)
         description: ""
       - name: lifetime_order_item_count
-        data_type: number
+        data_type: number(30,0)
         description: ""
       - name: lifetime_gross_revenue
-        data_type: number
+        data_type: number(18,2)
         description: ""
       - name: lifetime_discount
-        data_type: number
+        data_type: number(18,2)
         description: ""
       - name: lifetime_net_revenue
-        data_type: number
+        data_type: number(18,2)
         description: "Customer value"
         data_tests:
           - not_null
         config:
           meta: {'intended_use' : 'Sum to calculate customer lifetime value'}
       - name: returned_revenue
-        data_type: number
+        data_type: number(18,2)
         description: ""
       - name: lifetime_collected
-        data_type: number
+        data_type: number(18,2)
         description: ""
       - name: lifetime_refunded
-        data_type: number
+        data_type: number(18,2)
         description: ""
       - name: lifetime_net_collected
-        data_type: number
+        data_type: number(18,2)
         description: ""
       - name: average_order_value
-        data_type: number
+        data_type: number(18,2)
         description: ""
       - name: days_to_first_order
-        data_type: number
+        data_type: number(9,0)
         description: ""
       - name: days_since_last_order
-        data_type: number
+        data_type: number(9,0)
         description: ""
+
       - name: has_ordered
         data_type: boolean
         description: ""
