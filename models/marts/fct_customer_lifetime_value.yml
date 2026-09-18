@@ -2,57 +2,92 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
-    description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
-      
-    columns:
+    description: >
+      Customer value mart at one row per customer, including customers who have
+      never placed a billable order. Revenue, payment, order, and engagement
+      fields summarize each customer's full history through the latest loaded
+      order and payment data. Filter to `has_ordered` before summing or averaging
+      revenue when the analysis should represent buyers rather than all signed-up
+      customers.
+    config:
+      meta:
+        grain: One row per customer_id, including customers with no billable orders.
+        intended_use: >
+          Customer cohort, retention, and observed lifetime-value analysis using
+          account signup attributes and cumulative order and payment behavior.
+        caveats:
+          - Filter to `has_ordered` when calculating buyer-level revenue averages; non-buyers are retained with zero revenue.
+          - Lifetime values are observed through the latest loaded data, not predicted lifetime value; recent onboarding cohorts have had less time to generate value.
+          - First and last order dates and several activity counts include cancelled orders, while billable order and revenue fields exclude them.
+          - Lifetime net revenue reflects order value, while lifetime net collected reflects successful payments less refunds; choose the measure that matches the analysis.
 
+
+    columns:
       - name: customer_id
-        description:
+        description: Primary identifier for the customer represented by the row.
+
       - name: signed_up_date
-        description: ""
+        description: Date the customer account was created; use this to define onboarding cohorts.
+
       - name: home_region
-        description: ""
+        description: Canonical home region associated with the customer account.
+
       - name: favored_discipline
-        description: ""
+        description: Magical discipline the customer has selected as their preference.
 
       - name: first_order_date
-        description: ""              
+        description: Date of the customer's earliest order, including orders later cancelled; null when the customer has never ordered.
+
       - name: last_order_date
-        description: ""
+        description: Date of the customer's most recent order, including orders later cancelled; null when the customer has never ordered.
+
       - name: order_count
-        description: ""
+        description: Total number of orders associated with the customer, regardless of order status.
+
       - name: billable_order_count
-        description: ""
+        description: Number of customer orders whose status is not `cancelled`; used as the denominator for `average_order_value`.
+
       - name: completed_order_count
-        description: ""
+        description: Number of customer orders with a current status of `completed`.
+
       - name: shop_count
-        description: ""
+        description: Number of distinct shops from which the customer has placed an order, regardless of order status.
+
       - name: lifetime_order_item_count
-        description: ""
+        description: Total number of order-item rows across all customer orders, regardless of order status.
+
       - name: lifetime_gross_revenue
-        description: ""
+        description: Gross merchandise value in gold from all non-cancelled customer orders before discounts.
+
       - name: lifetime_discount
-        description: ""
+        description: Total discounts in gold applied to all non-cancelled customer orders.
+
       - name: lifetime_net_revenue
-        description: ""
+        description: Net revenue in gold from all non-cancelled customer orders after discounts; this is the revenue-based customer lifetime value field.
+
       - name: returned_revenue
-        description: ""
+        description: Net revenue in gold associated with orders whose current status is `returned`.
+
       - name: lifetime_collected
-        description: ""
+        description: Total successful payment amount collected from the customer in gold before refunds.
+
       - name: lifetime_refunded
-        description: ""
+        description: Total payment amount refunded to the customer in gold.
+
       - name: lifetime_net_collected
-        description: ""
+        description: Net cash collected from the customer in gold, calculated as `lifetime_collected - lifetime_refunded`.
+
       - name: average_order_value
-        description: ""
+        description: Average net revenue in gold per non-cancelled order, calculated as lifetime net revenue divided by billable order count; null for customers without a billable order.
+
       - name: days_to_first_order
-        description: ""
+        description: Number of calendar days from account signup to the customer's first order; null when the customer has never ordered.
+
       - name: days_since_last_order
-        description: ""
+        description: Number of calendar days from the customer's most recent order to the current date when the model was built; null when the customer has never ordered.
+
       - name: has_ordered
-        description: ""
+        description: True when the customer has at least one non-cancelled order; use this flag to restrict buyer-level revenue analysis.
+
       - name: is_repeat_customer
-        description: ""
+        description: True when the customer has more than one non-cancelled order.
