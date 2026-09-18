@@ -3,6 +3,10 @@ version: 2
 models:
   - name: fct_customer_lifetime_value
     description: "table showing lifetime order values per customer"
+    config:
+      meta:
+        owner: Commerce Analytics
+      group: commerce_analytics
     columns:
 
       - name: customer_id

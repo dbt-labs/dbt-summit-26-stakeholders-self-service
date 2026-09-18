@@ -1,0 +1,11 @@
+exposures:
+  - name: customer_ltv_dashboard
+    owner:
+      name: Commerce Analytics
+      email: commerce-analytics@merlinco.example
+      
+    type: dashboard
+    url: https://bi.merlinco.example/dashboards/customer-ltv
+    description: Customer lifetime value, reviewed weekly by retail ops.
+    depends_on:
+      - ref('fct_customer_lifetime_value')
