@@ -11,8 +11,12 @@ models:
 
       - name: customer_id
         description: "Unique organization generated identifier for customer"
+        data_tests:
+          - not_null
       - name: signed_up_date
         description: "Date the customer signed first completed purchase order.  Not the date customer received or paid first order.  Incomplete or cancelled orders do not count."
+        data_tests:
+          - not_null
       - name: home_region
         description: "Geographic region of customer account on file according to internal sales region."
       - name: favored_discipline
