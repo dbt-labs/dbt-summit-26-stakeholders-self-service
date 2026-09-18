@@ -14,6 +14,7 @@ models:
         grain: one row per customer
         intended_use: no idea
         caveats: includes customers who have never placed a billable order
+      group: commerce_analytics # changed to config in v1.10
     columns:
       - name: customer_id
         description: Primary identifier for the customer and the unique grain of the model.

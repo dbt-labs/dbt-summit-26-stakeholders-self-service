@@ -1,0 +1,10 @@
+groups:
+  - name: commerce_analytics
+    owner:
+      # 'name' or 'email' is required; additional properties will no longer be allowed in a future release
+      email: finance@jaffleshop.com
+    config:
+      meta: # optional
+        data_owner: Finance team
+        cost_center: finance
+        data_classification: sensitive
