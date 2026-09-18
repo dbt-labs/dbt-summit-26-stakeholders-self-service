@@ -2,15 +2,28 @@ version: 2
 
 models:
   - name: fct_customer_lifetime_value
-    description:
-      includes customers who never ordered — filter on has_ordered before
-      summing or averaging revenue, or you'll understate the average across
-      real buyers.
-      
+    description: >-
+      Customer-level mart for lifetime purchasing behavior and value analysis,
+      with one row per customer. Includes customers who have never ordered, so
+      filter on `has_ordered` before calculating buyer-level revenue averages.
+
+    config:
+      meta:
+        grain: one row per customer
+        intended_use: >-
+          Customer segmentation, retention analysis, repeat-purchase analysis,
+          and comparison of lifetime purchasing value across customer cohorts.
+        caveats: >-
+          Includes customers who have never ordered; filter on `has_ordered` for
+          buyer-only analysis. Lifetime revenue excludes cancelled orders but
+          includes returned orders, which are tracked separately in
+          `returned_revenue`.
+
+
     columns:
 
       - name: customer_id
-        description:
+        description: Primary identifier for the customer and the grain of this model.
       - name: signed_up_date
         description: ""
       - name: home_region
@@ -19,7 +32,9 @@ models:
         description: ""
 
       - name: first_order_date
-        description: ""              
+        description: >-
+          Date of the customer's earliest order, regardless of order status.
+          Null when the customer has never placed an order.
       - name: last_order_date
         description: ""
       - name: order_count
@@ -37,7 +52,10 @@ models:
       - name: lifetime_discount
         description: ""
       - name: lifetime_net_revenue
-        description: ""
+        description: >-
+          Customer lifetime value in gold, calculated as gross order revenue
+          less discounts across all non-cancelled orders. Zero for customers
+          with no non-cancelled orders.
       - name: returned_revenue
         description: ""
       - name: lifetime_collected
