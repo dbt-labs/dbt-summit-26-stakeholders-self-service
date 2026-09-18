@@ -5,6 +5,7 @@ models:
     description:
       This model is limited to last 2 years data, and contains info such as lifetime gross revenue and lifetime revenue per clients, based on customer_id, as well as shop information (shop count for example).
     config:
+      group: commerce_analytics
       meta:
         grain: ["customer_id"]
         intended_use: "Used by the finance and analytics team for lifetime amount per customers."

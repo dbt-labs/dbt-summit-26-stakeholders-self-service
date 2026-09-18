@@ -1,0 +1,6 @@
+version: 2
+
+groups:
+  - name: commerce_analytics
+    owner:
+      name: "Mr Jones"
